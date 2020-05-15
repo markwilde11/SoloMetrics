@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ProgressBar
+        android:id="@+id/toolbarprogress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:progress="30"
+        android:layout_width="fill_parent"
+        android:layout_height="4dp" />
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <ImageView
+            android:id="@+id/backgroundImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="20pt"
+            android:alpha="0.1"
+            android:src="@drawable/ic_web_black_24dp"
+            android:scaleType="fitCenter">
+        </ImageView>
+        <ListView
+            android:id="@+id/discoverListView"
+            android:choiceMode="singleChoice"
+            android:listSelector="#666666"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        </ListView>
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/startButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/fab_margin"
+            app:srcCompat="@android:drawable/ic_dialog_email" />
+    </FrameLayout>
+</LinearLayout>
