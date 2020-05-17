@@ -41,9 +41,8 @@ jobs:
         tokenPrefix: '#{'
         tokenSuffix: '}#'
         files: 'kotlin/app/build.gradle'
-    - name: Gradle Command
-      uses: eskatos/gradle-command-action@v1
-      with:  
-        build-root-directory: 'kotlin'
-        gradle-executable: 'kotlin/gradlew'
-        arguments: 'bundleRelease -Xmx3072m '
+    - name: Run Gradle command
+      uses: Raul6469/android-gradle-action@2.0.0
+      with:
+        script: bundleRelease
+
