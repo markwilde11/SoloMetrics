@@ -28,7 +28,7 @@ android {
             // keystore file in the same directory as the build.gradle file.
             storeFile file("#{DOT_KEYSTORE_FILELOCATION}#")
             storePassword "#{DOT_KEYSTORE_PASSWORD}#"
-            keyAlias "PlaystorePrivateKey"
+            keyAlias "teamwildenberg.solometrics"
             keyPassword "#{DOT_KEYALIAS_PASSWORD}#"
         }
     }
