@@ -43,7 +43,7 @@ stages:
         tokenSuffix: '}#'
     - task: DownloadSecureFile@1
       inputs:
-        secureFile: 'keystores.jks'
+        secureFile: 'solometrics-keystores.jks'
     - task: Gradle@2
       inputs:
         workingDirectory: 'kotlin'
