@@ -1,4 +1,4 @@
-name: $(majorVersion).$(minorVersion).$(DOT_BUILD_VERSIONCODE) 
+name: $(GitVersion.SemVer)
 
 trigger:
   branches:
@@ -13,13 +13,11 @@ pool:
 
 variables:
   System.Debug: true
-  DOT_KEYSTORE_FILELOCATION: $(Agent.TempDirectory)/keystores.jks
+  DOT_KEYSTORE_FILELOCATION: $(Agent.TempDirectory)/solometrics-keystores.jks
   DOT_KEYSTORE_PASSWORD: $(KeystorePassword)
   DOT_KEYALIAS_PASSWORD: $(KeyAliasPassword)
-  majorVersion: 1
-  minorVersion: 0
   DOT_BUILD_VERSIONCODE: $[counter()]
-  DOT_BUILD_VERSIONNAME: $(majorVersion).$(minorVersion).$(DOT_BUILD_VERSIONCODE) 
+  DOT_BUILD_VERSIONNAME: $(GitVersion.MajorMinorPatch) 
 
 
 pr: none

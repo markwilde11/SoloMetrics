@@ -13,7 +13,7 @@ pr: none
 resources:
   pipelines:
   - pipeline: Solo
-    source: kotlin-android-build
+    source: teamwildenberg.SoloMetrics
     trigger: 
       branches:
         include: 
@@ -31,7 +31,7 @@ stages:
       inputs:
         source: 'specific'
         project: 'Gps'
-        pipeline: 20
+        pipeline: 24
         runVersion: 'latest'
         targetPath: '$(Pipeline.Workspace)'
    #https://medium.com/@andrewleader/publish-android-aab-to-google-play-store-using-azure-devops-pipelines-485683f3b9ec
