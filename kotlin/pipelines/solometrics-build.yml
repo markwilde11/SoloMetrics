@@ -1,33 +1,65 @@
-# This is a basic workflow to help you get started with Actions
+name: $(GitVersion.SemVer)
 
-name: CI
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - kotlin/*
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+pool:
+  vmImage: 'macOS-latest'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+variables:
+  System.Debug: true
+  DOT_KEYSTORE_FILELOCATION: $(Agent.TempDirectory)/solometrics-keystores.jks
+  DOT_KEYSTORE_PASSWORD: $(KeystorePassword)
+  DOT_KEYALIAS_PASSWORD: $(KeyAliasPassword)
+  DOT_BUILD_VERSIONCODE: $[counter()]
+  DOT_BUILD_VERSIONNAME: $(GitVersion.MajorMinorPatch) 
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+
+pr: none
+
+stages:
+- stage: Build
+  jobs:
+  - job: Default
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
-
-    # Runs a single command using the runners shell
-    - name: Run a one-line script
-      run: echo Hello, world!
-
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+    - task: UseDotNet@2
+      displayName: 'Install .NET Core sdk'
+      inputs:
+        packageType: sdk
+        version: 2.1.806
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+    - task: GitVersion@5
+      inputs:
+        runtime: 'core'
+        preferBundledVersion: false
+        configFilePath: './kotlin/gitversion.yml'
+    - task: replacetokens@3
+      inputs:
+        targetFiles: 'kotlin/app/build.gradle'
+        encoding: 'auto'
+        writeBOM: true
+        actionOnMissing: 'fail'
+        keepToken: false
+        tokenPrefix: '#{'
+        tokenSuffix: '}#'
+    - task: DownloadSecureFile@1
+      inputs:
+        secureFile: 'solometrics-keystores.jks'
+    - task: Gradle@2
+      inputs:
+        workingDirectory: 'kotlin'
+        gradleWrapperFile: 'kotlin/gradlew'
+        gradleOptions: '-Xmx3072m '
+        publishJUnitResults: false
+        testResultsFiles: '**/TEST-*.xml'
+        tasks: 'bundleRelease'
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/kotlin/app/build/outputs/bundle'
+        artifact: 'bundle'
+        publishLocation: 'pipeline'

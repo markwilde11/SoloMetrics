@@ -1,0 +1,41 @@
+trigger: none
+
+pool:
+  vmImage: 'macOS-latest'
+
+variables:
+  bundleFileLocation: $(Pipeline.Workspace)/bundle/release/app-release.aab
+  GoogleJsonApiKeyFile: api-4637160248586217580-429967-5ca1f3964ee4.json
+  System.Debug: true
+  
+pr: none
+
+resources:
+  pipelines:
+  - pipeline: Solo
+    source:  GitHub - Tw - SoloMetrics - Build
+    trigger: 
+      branches:
+        include: 
+        - master
+
+stages:
+- stage: AppCenter
+  jobs:
+  - job: Release
+    steps:
+    - task: DownloadSecureFile@1
+      inputs:
+        secureFile: '$(GoogleJsonApiKeyFile)'
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        source: 'specific'
+        project: 'Gps'
+        pipeline: 24
+        runVersion: 'latest'
+        targetPath: '$(Pipeline.Workspace)'
+   #https://medium.com/@andrewleader/publish-android-aab-to-google-play-store-using-azure-devops-pipelines-485683f3b9ec
+    - task: Bash@3
+      inputs:
+        targetType: 'inline'
+        script: 'fastlane supply --aab $(bundleFileLocation) --track alpha --rollout 1.0 --json_key $(Agent.TempDirectory)/$(GoogleJsonApiKeyFile) --package_name nl.teamwildenberg.solometrics'
