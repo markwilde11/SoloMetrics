@@ -41,8 +41,11 @@ jobs:
         tokenPrefix: '#{'
         tokenSuffix: '}#'
         files: 'kotlin/app/build.gradle'
-    - name: Run Gradle command
-      uses: Raul6469/android-gradle-action@2.0.0
-      with:
-        script: bundleRelease
+        
+    - name: Run Build
+      run: ./kotlin/gradlew bundleRelease  
+#     - name: Run Gradle command
+#       uses: Raul6469/android-gradle-action@2.0.0
+#       with:
+#         script: bundleRelease
 
