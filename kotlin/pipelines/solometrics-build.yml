@@ -18,7 +18,7 @@ variables:
   DOT_KEYALIAS_PASSWORD: $(KeyAliasPassword)
   majorVersion: 1
   minorVersion: 0
-  DOT_BUILD_VERSIONCODE: $[counter(variables['majorVersion'], 2)]
+  DOT_BUILD_VERSIONCODE: $[counter()]
   DOT_BUILD_VERSIONNAME: $(majorVersion).$(minorVersion).$(DOT_BUILD_VERSIONCODE) 
 
 
@@ -29,6 +29,11 @@ stages:
   jobs:
   - job: Default
     steps:
+    - task: GitVersion@5
+      inputs:
+        runtime: 'core'
+        preferBundledVersion: false
+        configFilePath: './kotlin/gitversion.yml'
     - task: replacetokens@3
       inputs:
         targetFiles: 'kotlin/app/build.gradle'
