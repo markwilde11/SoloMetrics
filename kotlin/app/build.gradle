@@ -7,8 +7,8 @@ apply plugin: 'kotlin-android-extensions'
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.3"
-    def versionCodeString = "#{DOT_BUILD_VERSIONCODE}#"
-    def versionNameString = "#{DOT_BUILD_VERSIONNAME}#"
+    def versionCodeString = "12"
+    def versionNameString = "1.1.1"
     if (versionCodeString.length() == 25){
         versionCodeString = '2'
         versionNameString = '1.1'
@@ -22,16 +22,7 @@ android {
         versionName "${versionNameString}"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    signingConfigs {
-        release {
-            // You need to specify either an absolute path or include the
-            // keystore file in the same directory as the build.gradle file.
-            storeFile file("#{DOT_KEYSTORE_FILELOCATION}#")
-            storePassword "#{DOT_KEYSTORE_PASSWORD}#"
-            keyAlias "PlaystorePrivateKey"
-            keyPassword "#{DOT_KEYALIAS_PASSWORD}#"
-        }
-    }
+
     buildTypes {
         release {
             minifyEnabled false
