@@ -257,13 +257,16 @@ class ScreenDuinoService: Service() {
 
         val secondElement = (value[1].toUnsignedInt()).shl(8)
         var firstElement = value[0].toUnsignedInt()
-
+        var boatDirection = 360 - (value[9].toUnsignedInt().shl(8) or value[8].toUnsignedInt())
+        if (boatDirection == 360)
+            boatDirection = 0
         var msmnt = WindMeasurement(
             WindSpeed = ((secondElement or firstElement)  * 1.9438444924574 / 100).roundToInt(),
             WindDirection = value[3].toUnsignedInt().shl(8) or value[2].toUnsignedInt(),
-            BoatDirection = 360 - (value[9].toUnsignedInt().shl(8) or value[8].toUnsignedInt()),
+            BoatDirection = boatDirection,
             BatteryPercentage = value[4].toUnsignedInt()*10
         )
+
         return msmnt
     }
 
