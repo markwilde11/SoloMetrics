@@ -1,6 +1,7 @@
 package nl.teamwildenberg.SoloMetrics
 
 import android.Manifest
+import android.R.attr.rotation
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
@@ -8,7 +9,6 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
-import com.google.android.material.snackbar.Snackbar
 import android.view.Menu
 import android.view.MenuItem
 import android.view.animation.Animation
@@ -16,10 +16,13 @@ import android.view.animation.RotateAnimation
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
-
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
 import nl.teamwildenberg.SoloMetrics.Ble.DeviceTypeEnum
 import nl.teamwildenberg.SoloMetrics.Service.ScreenDuinoService
@@ -165,16 +168,32 @@ class MainActivity : ActivityBase(),CoroutineScope {
                             txtWindDirectoin.setText("${msmnt.WindDirection}")
                             txtBattery.setText("${msmnt.BatteryPercentage}")
 
-                            var boatAngle = -angleOffset(msmnt.BoatDirection, previousBoatDirection)
-                            var windAngle = -angleOffset(msmnt.WindDirection, previousWindDirection)
-
-                       //     boatDirectionImage.animate().rotation(previousBoatDirection.toFloat()).start();
-                       //     windDirectionImage.animate().rotation(previousWindDirection.toFloat()).start();
-                            boatDirectionImage.animate().setDuration(600).rotationBy(boatAngle.toFloat()).start();
-                            windDirectionImage.animate().setDuration(600).rotationBy(windAngle.toFloat()).start();
-
+                            val bra = RotateAnimation(
+                                - previousBoatDirection.toFloat(),
+                                - msmnt.BoatDirection.toFloat(),
+                                Animation.RELATIVE_TO_SELF,
+                                0.5f,
+                                Animation.RELATIVE_TO_SELF,
+                                0.5f
+                            )
+                            bra.setDuration(600);
+                            bra.setFillAfter(true);
+                            boatDirectionImage.startAnimation(bra);
                             previousBoatDirection = msmnt.BoatDirection;
+
+                            val wra = RotateAnimation(
+                                previousWindDirection.toFloat(),
+                                msmnt.WindDirection.toFloat(),
+                                Animation.RELATIVE_TO_SELF,
+                                0.5f,
+                                Animation.RELATIVE_TO_SELF,
+                                0.5f
+                            )
+                            wra.setDuration(600);
+                            wra.setFillAfter(true);
+                            windDirectionImage.startAnimation(wra);
                             previousWindDirection = msmnt.WindDirection;
+
                         }
                     }
                     else{
