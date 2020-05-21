@@ -43,6 +43,9 @@ class MainActivity : ActivityBase(),CoroutineScope {
         val thisActivity = this
         mJob = Job()
 
+        var versionName= BuildConfig.VERSION_NAME
+        setTitle("SoloMetrics ( v${versionName} )")
+
         UltrasonicButton.setOnClickListener { view ->
             launch {
                 if (screenBinding?.ultraSonicDevice == null) {

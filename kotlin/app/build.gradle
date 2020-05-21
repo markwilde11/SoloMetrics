@@ -11,7 +11,7 @@ android {
     def versionNameString = "#{DOT_BUILD_VERSIONNAME}#"
     if (versionCodeString.length() == 25){
         versionCodeString = '2'
-        versionNameString = '1.1'
+        versionNameString = '0.0.x'
     }
 
     defaultConfig {
