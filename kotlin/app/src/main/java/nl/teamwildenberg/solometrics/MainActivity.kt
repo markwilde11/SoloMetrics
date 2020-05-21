@@ -11,6 +11,8 @@ import android.os.IBinder
 import com.google.android.material.snackbar.Snackbar
 import android.view.Menu
 import android.view.MenuItem
+import android.view.animation.Animation
+import android.view.animation.RotateAnimation
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -143,8 +145,6 @@ class MainActivity : ActivityBase(),CoroutineScope {
             var txtBattery = findViewById<TextView>(R.id.UltrasonicBatteryTextView)
             var previousBoatDirection : Int = 0;
             var previousWindDirection : Int =0;
-            boatDirectionImage.animate().setDuration(300).rotationBy(-45f).start();
-            windDirectionImage.animate().setDuration(300).rotationBy(-180f).start();
 
 
             screenBinding = service as ScreenDuinoService.MyLocalBinder
@@ -165,10 +165,11 @@ class MainActivity : ActivityBase(),CoroutineScope {
                             txtWindDirectoin.setText("${msmnt.WindDirection}")
                             txtBattery.setText("${msmnt.BatteryPercentage}")
 
-                            var boatAngle = angleOffset(msmnt.BoatDirection, previousBoatDirection)
-                            var windAngle = angleOffset(msmnt.WindDirection, previousWindDirection)
-                            boatDirectionImage.animate().rotation(previousBoatDirection.toFloat()).start();
-                            windDirectionImage.animate().rotation(previousWindDirection.toFloat()).start();
+                            var boatAngle = -angleOffset(msmnt.BoatDirection, previousBoatDirection)
+                            var windAngle = -angleOffset(msmnt.WindDirection, previousWindDirection)
+
+                       //     boatDirectionImage.animate().rotation(previousBoatDirection.toFloat()).start();
+                       //     windDirectionImage.animate().rotation(previousWindDirection.toFloat()).start();
                             boatDirectionImage.animate().setDuration(600).rotationBy(boatAngle.toFloat()).start();
                             windDirectionImage.animate().setDuration(600).rotationBy(windAngle.toFloat()).start();
 
