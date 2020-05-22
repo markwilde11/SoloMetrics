@@ -1,5 +1,16 @@
-# Solo Metrics
-This project contains two apps. An Arduino screen for reading wind measurements and an Android App for the man in the middle. The Android app is connecting to both the UltraSonic and the screen.
+# Goal
+I am aiming for a trainings aid in dinghies. A lot of sailors cannot train frequently with a second boat and have trouble judging their [VMG](https://en.wikipedia.org/wiki/Velocity_made_good). This project is aimed to have a digital feedback on your performance with (relative) low cost hardware. With a mobile phone to measure speed and boat-direction, an Ultrasonic for measuring windspeed and an e-ink screen to show the actual performance of the user.
+
+## More Detail
+To be able to judge your VMG you need to know what your performance was in previous sessions. The app aims to keep your data and calculate the VMG and store it. During post-processing the training session can be added to your performance  and you can calculate a [polar diagram](https://76trombones.wordpress.com/2009/10/17/polar-diagrams-vmg) for your personal performance. The aim is to feedback that data into the app so that the sailor can directly see how he is performing.
+
+## Steps towards the Goal
+There is quite a few steps to take to achieve this goal. Let's try to sum-up the most important steps:
+v - Have a wind measuring device connected
+v - 
+
+# Apps
+This project contains two apps. An Arduino screen for showing wind measurements and an Android App for the computational power. The Android app is connecting to both the UltraSonic and the screen.
 
 ## Arduino 
 Arduino setup for nRF52
@@ -16,7 +27,7 @@ Actions
 ## Android
 [![Build Status](https://dev.azure.com/tw/Gps/_apis/build/status/kotlin-android-release?branchName=master)](https://dev.azure.com/tw/Gps/_build/latest?definitionId=18&branchName=master)
 
-Kotlin app for connecting the Ultrasonic and the Arduino Screen.
+Kotlin app for connecting the Ultrasonic and the Arduino Screen. 
 
 
 
