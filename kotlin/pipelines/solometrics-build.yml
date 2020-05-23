@@ -27,17 +27,44 @@ stages:
   jobs:
   - job: Default
     steps:
-    - task: UseDotNet@2
-      displayName: 'Install .NET Core sdk'
+    - task: UseGitVersion@5
       inputs:
-        packageType: sdk
-        version: 2.1.806
-        installationPath: $(Agent.ToolsDirectory)/dotnet
-    - task: GitVersion@5
-      inputs:
-        runtime: 'core'
-        preferBundledVersion: false
         configFilePath: './kotlin/gitversion.yml'
+    - task: replacetokens@3
+      inputs:
+        targetFiles: 'kotlin/app/build.gradle'
+        encoding: 'auto'
+        writeBOM: true
+        actionOnMissing: 'fail'
+        keepToken: false
+        tokenPrefix: '#{'
+        tokenSuffix: '}#'
+    - task: Gradle@2
+      displayName: Build and Unit Test
+      inputs:
+        workingDirectory: 'kotlin_tinkering'
+        gradleWrapperFile: 'kotlin_tinkering/gradlew'
+        gradleOptions: '-Xmx3072m '
+        publishJUnitResults: false
+        testResultsFiles: '**/TEST-*.xml'
+        tasks: 'build'
+    - bash: chmod +x kotlin_tinkering/pipeline/kotlin_integration_test.sh
+    - bash: ./kotlin_tinkering/pipeline/kotlin_integration_test.sh
+    # KUDOS
+    # https://medium.com/genetec-tech/android-ui-testing-in-azure-devops-81bbe7cea9fd
+    - bash: | 
+        ./kotlin_tinkering/gradlew connectedDebugAndroidTest --stacktrace -p ./kotlin_tinkering
+        ./kotlin_tinkering/gradlew --stop 
+      displayName: 'Run Instrumented Tests' 
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFiles: '**/kotlin_tinkering/app/build/**/TEST*.xml'
+        failTaskOnFailedTests: true
+        testRunTitle: 'Test results'
+      condition: always()
+  - job: PackageAndPublish
+    steps:
     - task: replacetokens@3
       inputs:
         targetFiles: 'kotlin/app/build.gradle'
