@@ -64,6 +64,7 @@ stages:
         testRunTitle: 'Test results'
       condition: always()
   - job: PackageAndPublish
+    dependsOn: Build
     steps:
     - task: replacetokens@3
       inputs:
