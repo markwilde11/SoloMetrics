@@ -50,8 +50,8 @@ stages:
         publishJUnitResults: false
         testResultsFiles: '**/TEST-*.xml'
         tasks: 'assembleDebug'
-    - bash: chmod +x kotlin/pipeline/kotlin_integration_test.sh
-    - bash: ./kotlin/pipeline/kotlin_integration_test.sh
+    - bash: chmod +x kotlin/pipelines/kotlin_integration_test.sh
+    - bash: ./kotlin/pipelines/kotlin_integration_test.sh
     # KUDOS
     # https://medium.com/genetec-tech/android-ui-testing-in-azure-devops-81bbe7cea9fd
     - bash: | 
