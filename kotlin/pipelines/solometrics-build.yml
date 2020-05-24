@@ -39,7 +39,7 @@ stages:
     pool: 
       vmImage: ubuntu-latest
     variables:
-      DOT_BUILD_VERSIONNAME: $[ stageDependencies.Build.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
+      DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: Versioning
     steps:
     - task: replacetokens@3
@@ -79,7 +79,7 @@ stages:
     pool: 
       vmImage: macOS-latest
     variables:
-      DOT_BUILD_VERSIONNAME: $[ stageDependencies.Build.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
+      DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: BuildAndTest
     steps:
     - task: replacetokens@3
