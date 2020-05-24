@@ -8,9 +8,6 @@ trigger:
     include:
     - kotlin/*
 
-pool:
-  vmImage: 'macOS-latest'
-
 variables:
   System.Debug: true
   DOT_KEYSTORE_FILELOCATION: $(Agent.TempDirectory)/solometrics-keystores.jks
@@ -25,7 +22,8 @@ stages:
 - stage: Build
   jobs:
   - job: Versioning
-    pool: ubuntu-latest
+    pool: 
+      vmImage: ubuntu-latest
     steps:
     - task: UseGitVersion@5
       inputs:
@@ -38,6 +36,8 @@ stages:
         echo "##vso[task.setvariable variable=DOT_BUILD_VERSIONNAME;isOutput=true]$(GitVersion.MajorMinorPatch) " #The variable DOT_BUILD_VERSIONNAME is set to $(GitVersion.MajorMinorPatch) 
       name: GitVersionPipeline        
   - job: BuildAndTest
+    pool: 
+      vmImage: ubuntu-latest
     variables:
       DOT_BUILD_VERSIONNAME: $[ stageDependencies.Build.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: Versioning
@@ -76,6 +76,8 @@ stages:
         testRunTitle: 'Test results'
       condition: always()
   - job: PackageAndPublish
+    pool: 
+      vmImage: macOS-latest
     variables:
       DOT_BUILD_VERSIONNAME: $[ stageDependencies.Build.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: BuildAndTest
