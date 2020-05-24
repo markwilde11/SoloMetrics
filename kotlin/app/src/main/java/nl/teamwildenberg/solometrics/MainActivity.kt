@@ -34,6 +34,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = mJob + Dispatchers.Main
     private var screenBinding: ScreenDuinoService.LocalBinder? = null
+    private var storageBinding: StorageService.LocalBinder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,31 +68,32 @@ class MainActivity : ActivityBase(),CoroutineScope {
             }
         }
         StorageButton.setOnClickListener { view ->
-
-            var storageServiceIntent = Intent(thisActivity, StorageService::class.java)
-            if (screenBinding?.storageIsConnected!!) {
-                stopService(storageServiceIntent)
+            var storageServiceIntent = Intent(this, StorageService::class.java)
+            if (storageBinding == null){
+                storageServiceIntent.putExtra("action", "start")
+                startService(storageServiceIntent)
             }
             else
             {
-                startService(storageServiceIntent)
+                stopService(storageServiceIntent)
             }
-
         }
-
-
     }
 
     override fun onResume() {
         super.onResume()
 
         val bindServiceIntent = Intent(this, ScreenDuinoService::class.java)
-        this.bindService(bindServiceIntent, myConnection, Context.BIND_NOT_FOREGROUND)
+        this.bindService(bindServiceIntent, screenDuinoServiceConnection, Context.BIND_NOT_FOREGROUND)
+
+        val bindStorageServiceIntent = Intent(this, StorageService::class.java)
+        this.bindService(bindStorageServiceIntent, storageServiceConnection, Context.BIND_NOT_FOREGROUND)
     }
 
     override fun onPause() {
         super.onPause()
-        this.unbindService(myConnection)
+        this.unbindService(screenDuinoServiceConnection)
+        this.unbindService(storageServiceConnection)
     }
 
     private suspend fun discoverDevice(deviceType: DeviceTypeEnum, thisActivity: Activity) {
@@ -153,9 +155,17 @@ class MainActivity : ActivityBase(),CoroutineScope {
         }
     }
 
+    private val storageServiceConnection = object: ServiceConnection{
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            storageBinding = service as StorageService.LocalBinder
+        }
 
+        override fun onServiceDisconnected(name: ComponentName?) {
+            storageBinding = null
+        }
+    }
 
-    private val myConnection = object : ServiceConnection {
+    private val screenDuinoServiceConnection = object : ServiceConnection {
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             var txtScreen = findViewById<TextView>(R.id.ScreenTextView)

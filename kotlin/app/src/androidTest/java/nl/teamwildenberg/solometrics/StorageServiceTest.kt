@@ -10,17 +10,20 @@ import io.paperdb.Paper
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.toObservable
 import io.reactivex.schedulers.Schedulers
+import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertNull
 import nl.teamwildenberg.SoloMetrics.Extensions.toStringKey
 import nl.teamwildenberg.SoloMetrics.Service.PaperTrace
 import nl.teamwildenberg.SoloMetrics.Service.StorageService
 import nl.teamwildenberg.SoloMetrics.Service.WindMeasurement
 import nl.teamwildenberg.solometrics.Service.PaperMeasurement
 import org.hamcrest.CoreMatchers.`is`
-import org.junit.Assert.assertThat
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.Exception
 import java.time.Instant
 
 /**
@@ -63,10 +66,10 @@ class StorageServiceTest {
             // ARRANGE
 
             // ACT
-            var trace = service.StartNewTrace()
+            service.StartNewTrace()
             // ASSERT
-            assertThat(trace.key, `is`(2))
-            assertThat(trace.epoch, `is`(Instant.now().epochSecond))
+            assertEquals(service.trace?.key, 2)
+            assertEquals(service.trace?.epoch, Instant.now().epochSecond)
         }
     }
     @Test
@@ -74,59 +77,97 @@ class StorageServiceTest {
         // ARRANGE
         var key:Int = 0;
 
-        Paper.book().write((key++).toString(), PaperTrace(key, Instant.now().epochSecond))
+        Paper.book().write((++key).toString(), PaperTrace(key, Instant.now().epochSecond))
         // ACT
         var trace = service.StartNewTrace()
         // ASSERT
-        assertThat(trace.key, `is`(2))
+        assertEquals(service.trace?.key, 2)
     }
 
-    @Test
-    fun addPartitionToNewTrace(){
-        var trace = service.StartNewTrace()
-        var measurementList = generateMeasurementList(10)
-        var partitionKey = service.AddMeasurements(trace, measurementList)
-        assertThat(partitionKey, `is`(1.toStringKey()))
-    }
-
-    @Test
-    fun addPartitionToExistingTrace(){
+    @Test(expected = Exception::class)
+    fun StorageServiceTest_traceStart_alreadyStarted() {
         // ARRANGE
-        var trace = service.StartNewTrace()
-        var measurementList = generateMeasurementList(10)
-        service.AddMeasurements(trace, measurementList)
+        var key:Int = 0;
+        service.StartNewTrace()
 
         // ACT
-        var partitionKey = service.AddMeasurements(trace, measurementList)
+        service.StartNewTrace()
 
-        // ASSERT
-        assertThat(partitionKey, `is`(2.toStringKey()))
-        var partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
-        assertThat(partitionKeyList.size, `is`(2))
-        var measurementListResult = Paper.book(trace.key.toStringKey()).read<MutableList<PaperMeasurement>>(partitionKey)
-        assertThat(measurementListResult.size, `is`(measurementList.size))
+    }
+    @Test
+    fun StorageServiceTest_Partition_ToNewTrace(){
+        service.StartNewTrace()
+        var measurementList = generateMeasurementList(10)
+        var partitionKey = service.trace?.let { service.AddMeasurements(it, measurementList) }
+        assertEquals(partitionKey, 1.toStringKey())
     }
 
     @Test
-    fun startMeasurementObservable(){
+    fun StorageServiceTest_Partition_ToExistingTrace(){
+        // ARRANGE
+        service.StartNewTrace()
+        var measurementList = generateMeasurementList(10)
+        service.trace?.let { service.AddMeasurements(it, measurementList) }
+
+        // ACT
+        var partitionKey = service.trace?.let { service.AddMeasurements(it, measurementList) }
+
+        // ASSERT
+        assertEquals(partitionKey, 2.toStringKey())
+        var partitionKeyList = Paper.book(service.trace?.key?.toStringKey()).allKeys
+        assertEquals(partitionKeyList.size, 2)
+        var measurementListResult = Paper.book(service.trace?.key?.toStringKey()).read<MutableList<PaperMeasurement>>(partitionKey)
+        assertEquals(measurementListResult.size, measurementList.size)
+    }
+
+    @Test
+    fun StorageServiceTest_Partition_Bind(){
         // ARRANGE
         RxJavaPlugins.setIoSchedulerHandler{ Schedulers.trampoline()}
 
-        var trace = service.StartNewTrace()
+        service.StartNewTrace()
         lateinit var partitionKeyList: List<String>
         val measurementList = generateWindMeasurementList(120)
         var measurementObservable = measurementList
             .toObservable()
             .observeOn(Schedulers.io())
             .doFinally(){
-                partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
+                var trace = service.trace
+                if (trace != null) {
+                    partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
+                }
             }
         // ACT
-        service.bindMeasurementObserver(trace, measurementObservable)
+        service.bindMeasurementObserver( measurementObservable)
 
         // ASSERT
-        assertThat(partitionKeyList.size, `is`(2))
+        assertEquals(partitionKeyList.size, 2)
     }
+
+    @Test
+    fun StorageServiceTest_Partition_BindBeforeStarting(){
+        // ARRANGE
+        RxJavaPlugins.setIoSchedulerHandler{ Schedulers.trampoline()}
+
+        var partitionKeyList: List<String> = listOf()
+        val measurementList = generateWindMeasurementList(120)
+        var measurementObservable = measurementList
+            .toObservable()
+            .observeOn(Schedulers.io())
+            .doFinally(){
+                var trace = service.trace
+                if (trace != null) {
+                    partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
+                }
+            }
+        // ACT
+        service.bindMeasurementObserver( measurementObservable)
+        service.StartNewTrace()
+
+        // ASSERT
+        assertEquals(partitionKeyList.size, 0)
+    }
+
 
     private fun generateWindMeasurementList(arraySize:Int): MutableList<WindMeasurement>{
         var partitionKey : Int = 0;

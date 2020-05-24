@@ -2,6 +2,7 @@ package nl.teamwildenberg.SoloMetrics.Service
 
 import android.app.*
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.BitmapFactory
@@ -40,6 +41,10 @@ class ScreenDuinoService: Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        val bindServiceIntent = Intent(this, StorageService::class.java)
+        this.bindService(bindServiceIntent, myServiceConnection, Context.BIND_NOT_FOREGROUND)
+
     }
 
 
@@ -106,7 +111,7 @@ class ScreenDuinoService: Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-
+        this.unbindService(myServiceConnection)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -307,12 +312,11 @@ class ScreenDuinoService: Service() {
 
     }
 
-    private val myStorageService = object: ServiceConnection {
+    private val myServiceConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
             var storageService = storageBinding!!.getService()
-            var trace = storageService.StartNewTrace()
-            storageService.bindMeasurementObserver(trace, localBinder.screenStatusChannel.map{ status -> status.windMeasurement})
+            storageService.bindMeasurementObserver( localBinder.screenStatusChannel.map{ status -> status.windMeasurement})
             localBinder.storageIsConnected = true
         }
 
