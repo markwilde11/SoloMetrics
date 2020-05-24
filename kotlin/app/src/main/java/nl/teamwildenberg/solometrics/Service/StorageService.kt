@@ -6,16 +6,18 @@ import android.os.Binder
 import android.os.IBinder
 import io.paperdb.Paper
 import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import nl.teamwildenberg.SoloMetrics.Extensions.toStringKey
-import nl.teamwildenberg.SoloMetrics.Service.WindMeasurement
 import nl.teamwildenberg.solometrics.Extensions.toPaper
 import nl.teamwildenberg.solometrics.Service.PaperMeasurement
 import java.lang.Exception
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 class StorageService: Service() {
     private val myBinder = LocalBinder()
+    private lateinit var trace: PaperTrace;
+    private val measurementDisposable: CompositeDisposable = CompositeDisposable()
 
     override fun onCreate() {
         super.onCreate()
@@ -45,7 +47,7 @@ class StorageService: Service() {
         }
     }
 
-    public fun StartNewTrace(): PaperTrace {
+    public fun StartNewTrace():PaperTrace {
         var traceKeys = Paper.book().allKeys
         var newKey = 0
         if (traceKeys.size > 0){
@@ -58,9 +60,9 @@ class StorageService: Service() {
         return trace
     }
 
-    public fun AddListener(trace: PaperTrace, obs: Observable<WindMeasurement>){
+    public fun bindMeasurementObserver(trace: PaperTrace, obs: Observable<WindMeasurement>){
         var counter = 0
-        var disp = obs
+        measurementDisposable += obs
             .map{msmnt:WindMeasurement -> msmnt.toPaper( ++counter)}
             .buffer(60)
             .subscribe { msmntList ->
@@ -68,7 +70,11 @@ class StorageService: Service() {
             }
     }
 
-    public fun AddMeasurements(trace: PaperTrace,measurementPartition: MutableList<PaperMeasurement>): String{
+    public fun unbindMeasurementObserver(){
+        measurementDisposable.clear()
+    }
+
+    public fun AddMeasurements(trace: PaperTrace, measurementPartition: MutableList<PaperMeasurement>): String{
         var partitionKey: Int = 1
 
         checkTrace(trace)

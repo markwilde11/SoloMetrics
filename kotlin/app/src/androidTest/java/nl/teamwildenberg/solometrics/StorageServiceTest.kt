@@ -5,31 +5,23 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ServiceTestRule
 import io.paperdb.Paper
-import io.reactivex.Maybe
-import io.reactivex.Observable
-import io.reactivex.android.plugins.RxAndroidPlugins
 import io.reactivex.plugins.RxJavaPlugins
-import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.toObservable
 import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.Subject
 import nl.teamwildenberg.SoloMetrics.Extensions.toStringKey
 import nl.teamwildenberg.SoloMetrics.Service.PaperTrace
 import nl.teamwildenberg.SoloMetrics.Service.StorageService
 import nl.teamwildenberg.SoloMetrics.Service.WindMeasurement
 import nl.teamwildenberg.solometrics.Service.PaperMeasurement
 import org.hamcrest.CoreMatchers.`is`
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Instant
-import java.util.concurrent.TimeoutException
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -130,7 +122,7 @@ class StorageServiceTest {
                 partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
             }
         // ACT
-        service.AddListener(trace, measurementObservable)
+        service.bindMeasurementObserver(trace, measurementObservable)
 
         // ASSERT
         assertThat(partitionKeyList.size, `is`(2))

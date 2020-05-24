@@ -1,7 +1,6 @@
 package nl.teamwildenberg.SoloMetrics
 
 import android.Manifest
-import android.R.attr.rotation
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
@@ -26,6 +25,7 @@ import kotlinx.coroutines.launch
 import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
 import nl.teamwildenberg.SoloMetrics.Ble.DeviceTypeEnum
 import nl.teamwildenberg.SoloMetrics.Service.ScreenDuinoService
+import nl.teamwildenberg.SoloMetrics.Service.StorageService
 import kotlin.coroutines.CoroutineContext
 
 
@@ -33,7 +33,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
     private lateinit var mJob: Job
     override val coroutineContext: CoroutineContext
         get() = mJob + Dispatchers.Main
-    private var screenBinding: ScreenDuinoService.MyLocalBinder? = null
+    private var screenBinding: ScreenDuinoService.LocalBinder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +65,18 @@ class MainActivity : ActivityBase(),CoroutineScope {
                     callScreenDuinoService(screenBinding!!.screenDuinoDevice, thisActivity)
                 }
             }
+        }
+        StorageButton.setOnClickListener { view ->
+
+            var storageServiceIntent = Intent(thisActivity, StorageService::class.java)
+            if (screenBinding?.storageIsConnected!!) {
+                stopService(storageServiceIntent)
+            }
+            else
+            {
+                startService(storageServiceIntent)
+            }
+
         }
 
 
@@ -141,6 +153,8 @@ class MainActivity : ActivityBase(),CoroutineScope {
         }
     }
 
+
+
     private val myConnection = object : ServiceConnection {
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -153,7 +167,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
             var previousWindDirection : Int =0;
 
 
-            screenBinding = service as ScreenDuinoService.MyLocalBinder
+            screenBinding = service as ScreenDuinoService.LocalBinder
             var disp = screenBinding?.screenStatusChannel
                 ?.observeOn(AndroidSchedulers.mainThread())
                 ?.subscribe({ theStatus ->
@@ -164,6 +178,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
                         txtScreen.setText("---")
                     }
                     if (theStatus.ultraSonicConnected ) {
+
                         var msmnt = theStatus.windMeasurement
                         if ( msmnt != null) {
                             txtWindSpeed.setText("${msmnt.WindSpeed}")
@@ -206,6 +221,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
                         txtBattery.setText("---")
                     }
                 })
+
         }
 
         private fun angleOffset(newDirection : Int, oldDirection: Int): Int{
