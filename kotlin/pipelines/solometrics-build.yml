@@ -17,7 +17,6 @@ variables:
   DOT_KEYSTORE_PASSWORD: $(KeystorePassword)
   DOT_KEYALIAS_PASSWORD: $(KeyAliasPassword)
   DOT_BUILD_VERSIONCODE: $[counter()]
-  DOT_BUILD_VERSIONNAME: $(GitVersion.MajorMinorPatch) 
 
 
 pr: none
@@ -25,13 +24,24 @@ pr: none
 stages:
 - stage: Build
   jobs:
-  - job: Default
+  - job: Versioning
+    pool: ubuntu-latest
     steps:
     - task: UseGitVersion@5
       inputs:
         versionSpec: '5.x'
         useConfigFile: true
         configFilePath: './kotlin/gitversion.yml'
+      name: GitVersion
+    - script: |
+        echo "Set replace token variables"
+        echo "##vso[task.setvariable variable=DOT_BUILD_VERSIONNAME;isOutput=true]$(GitVersion.MajorMinorPatch) " #The variable DOT_BUILD_VERSIONNAME is set to $(GitVersion.MajorMinorPatch) 
+      name: GitVersionPipeline        
+  - job: BuildAndTest
+    variables:
+      DOT_BUILD_VERSIONNAME: $[ stageDependencies.Build.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
+    dependsOn: Versioning
+    steps:
     - task: replacetokens@3
       inputs:
         targetFiles: 'kotlin/app/build.gradle'
@@ -66,7 +76,9 @@ stages:
         testRunTitle: 'Test results'
       condition: always()
   - job: PackageAndPublish
-    dependsOn: Default
+    variables:
+      DOT_BUILD_VERSIONNAME: $[ stageDependencies.Build.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
+    dependsOn: BuildAndTest
     steps:
     - task: replacetokens@3
       inputs:
