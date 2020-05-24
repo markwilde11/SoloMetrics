@@ -18,10 +18,7 @@ import nl.teamwildenberg.SoloMetrics.Service.StorageService
 import nl.teamwildenberg.SoloMetrics.Service.WindMeasurement
 import nl.teamwildenberg.solometrics.Service.PaperMeasurement
 import org.hamcrest.CoreMatchers.`is`
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
+import org.junit.*
 import org.junit.runner.RunWith
 import java.lang.Exception
 import java.time.Instant
@@ -44,7 +41,7 @@ class StorageServiceTest {
             StorageService::class.java
         ).apply {
             // Data can be passed to the service via the Intent.
-            putExtra("SEED_KEY", 42L)
+            putExtra("action", "")
         }
 
         // Bind the service and grab a reference to the binder.
@@ -59,6 +56,29 @@ class StorageServiceTest {
         Paper.book("0002").destroy()
     }
 
+    @After
+    fun teardownService(){
+        val serviceIntent = Intent(
+            ApplicationProvider.getApplicationContext<Context>(),
+            StorageService::class.java
+        ).apply{
+            putExtra("action", "stop")
+        }
+        serviceRule.startService(serviceIntent)
+
+    }
+
+    private fun startNewTrace(){
+        val serviceIntent = Intent(
+            ApplicationProvider.getApplicationContext<Context>(),
+            StorageService::class.java
+        ).apply {
+            // Data can be passed to the service via the Intent.
+            putExtra("action", "start")
+        }
+        serviceRule.startService(serviceIntent)
+    }
+
     @Test
     fun StorageServiceTest_traceStart() {
         @Test
@@ -66,7 +86,7 @@ class StorageServiceTest {
             // ARRANGE
 
             // ACT
-            service.StartNewTrace()
+            startNewTrace()
             // ASSERT
             assertEquals(service.trace?.key, 2)
             assertEquals(service.trace?.epoch, Instant.now().epochSecond)
@@ -79,24 +99,25 @@ class StorageServiceTest {
 
         Paper.book().write((++key).toString(), PaperTrace(key, Instant.now().epochSecond))
         // ACT
-        var trace = service.StartNewTrace()
+        startNewTrace()
+
         // ASSERT
         assertEquals(service.trace?.key, 2)
     }
 
-    @Test(expected = Exception::class)
+    @Test()
     fun StorageServiceTest_traceStart_alreadyStarted() {
         // ARRANGE
         var key:Int = 0;
-        service.StartNewTrace()
+        startNewTrace()
 
         // ACT
-        service.StartNewTrace()
-
+        startNewTrace()
+        assertEquals(service.trace?.key, 1)
     }
     @Test
     fun StorageServiceTest_Partition_ToNewTrace(){
-        service.StartNewTrace()
+        startNewTrace()
         var measurementList = generateMeasurementList(10)
         var partitionKey = service.trace?.let { service.AddMeasurements(it, measurementList) }
         assertEquals(partitionKey, 1.toStringKey())
@@ -105,7 +126,7 @@ class StorageServiceTest {
     @Test
     fun StorageServiceTest_Partition_ToExistingTrace(){
         // ARRANGE
-        service.StartNewTrace()
+        startNewTrace()
         var measurementList = generateMeasurementList(10)
         service.trace?.let { service.AddMeasurements(it, measurementList) }
 
@@ -125,7 +146,7 @@ class StorageServiceTest {
         // ARRANGE
         RxJavaPlugins.setIoSchedulerHandler{ Schedulers.trampoline()}
 
-        service.StartNewTrace()
+        startNewTrace()
         lateinit var partitionKeyList: List<String>
         val measurementList = generateWindMeasurementList(120)
         var measurementObservable = measurementList
@@ -162,7 +183,7 @@ class StorageServiceTest {
             }
         // ACT
         service.bindMeasurementObserver( measurementObservable)
-        service.StartNewTrace()
+        startNewTrace()
 
         // ASSERT
         assertEquals(partitionKeyList.size, 0)

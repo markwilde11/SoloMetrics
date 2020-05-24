@@ -34,6 +34,9 @@ class StorageService: Service() {
             if (actionString == "start") {
                 StartNewTrace()
             }
+            if (actionString == "stop") {
+                StopTrace()
+            }
         }
         return START_NOT_STICKY
     }
@@ -57,18 +60,17 @@ class StorageService: Service() {
     }
 
     private fun StartNewTrace() {
-        if (trace != null){
-            throw Exception("Storage already started")
+        if (trace == null) {
+            var traceKeys = Paper.book().allKeys
+            var newKey = 0
+            if (traceKeys.size > 0) {
+                var lastKey = traceKeys.last()
+                var lastTrace = Paper.book().read<PaperTrace>(lastKey)
+                newKey = lastTrace.key
+            }
+            trace = PaperTrace(++newKey, Instant.now().epochSecond)
+            Paper.book().write(newKey.toStringKey(), trace)
         }
-        var traceKeys = Paper.book().allKeys
-        var newKey = 0
-        if (traceKeys.size > 0){
-            var lastKey = traceKeys.last()
-            var lastTrace = Paper.book().read<PaperTrace>(lastKey)
-            newKey = lastTrace.key
-        }
-        trace = PaperTrace(++newKey, Instant.now().epochSecond)
-        Paper.book().write(newKey.toStringKey(), trace)
     }
 
     public fun StopTrace(){
@@ -84,6 +86,7 @@ class StorageService: Service() {
             .map{msmnt:WindMeasurement -> msmnt.toPaper( ++counter)}
             .buffer(60)
             .subscribe { msmntList ->
+
                 trace?.let { AddMeasurements(it, msmntList) }
             }
     }
