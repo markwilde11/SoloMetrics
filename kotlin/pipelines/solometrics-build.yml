@@ -37,7 +37,7 @@ stages:
       name: GitVersionPipeline        
   - job: BuildAndTest
     pool: 
-      vmImage: ubuntu-latest
+      vmImage: macOs-latest
     variables:
       DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: Versioning
@@ -78,7 +78,7 @@ stages:
   - job: PackageAndPublish
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     pool: 
-      vmImage: macOS-latest
+      vmImage: ubuntu-latest
     variables:
       DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: BuildAndTest
