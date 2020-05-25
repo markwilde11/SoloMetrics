@@ -10,8 +10,7 @@ import io.paperdb.Paper
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.toObservable
 import io.reactivex.schedulers.Schedulers
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertNull
+import junit.framework.Assert.*
 import nl.teamwildenberg.SoloMetrics.Extensions.toStringKey
 import nl.teamwildenberg.SoloMetrics.Service.PaperTrace
 import nl.teamwildenberg.SoloMetrics.Service.StorageService
@@ -102,7 +101,7 @@ class StorageServiceTest {
         startNewTrace()
 
         // ASSERT
-        assertEquals(service.trace?.key, 2)
+        assertEquals(2, service.trace?.key)
     }
 
     @Test()
@@ -113,14 +112,14 @@ class StorageServiceTest {
 
         // ACT
         startNewTrace()
-        assertEquals(service.trace?.key, 1)
+        assertEquals(1, service.trace?.key)
     }
     @Test
     fun StorageServiceTest_Partition_ToNewTrace(){
         startNewTrace()
         var measurementList = generateMeasurementList(10)
         var partitionKey = service.trace?.let { service.AddMeasurements(it, measurementList) }
-        assertEquals(partitionKey, 1.toStringKey())
+        assertEquals(1.toStringKey(), partitionKey)
     }
 
     @Test
@@ -138,7 +137,7 @@ class StorageServiceTest {
         var partitionKeyList = Paper.book(service.trace?.key?.toStringKey()).allKeys
         assertEquals(partitionKeyList.size, 2)
         var measurementListResult = Paper.book(service.trace?.key?.toStringKey()).read<MutableList<PaperMeasurement>>(partitionKey)
-        assertEquals(measurementListResult.size, measurementList.size)
+        assertEquals(measurementList.size, measurementListResult.size)
     }
 
     @Test
@@ -162,7 +161,7 @@ class StorageServiceTest {
         service.bindMeasurementObserver( measurementObservable)
 
         // ASSERT
-        assertEquals(partitionKeyList.size, 2)
+        assertEquals(2, partitionKeyList.size)
     }
 
     @Test
@@ -186,9 +185,69 @@ class StorageServiceTest {
         startNewTrace()
 
         // ASSERT
-        assertEquals(partitionKeyList.size, 0)
+        assertEquals(0,partitionKeyList.size)
     }
 
+    @Test
+    fun StorageServiceTest_TraceList_Empty(){
+        // ARRANGE
+        // ACT
+        var traceList = service.GetTraceList()
+        // ASSERT
+        assertEquals(0, traceList.size)
+    }
+
+    @Test
+    fun StorageServiceTest_TraceList_Multiple(){
+        // ARRANGE
+        var key: Int = 0
+        Paper.book().write((++key).toString(), PaperTrace(key, Instant.now().epochSecond))
+        startNewTrace()
+
+        // ACT
+        var traceList = service.GetTraceList()
+        // ASSERT
+        assertEquals(2, traceList.size)
+        assertTrue(traceList.last().epoch > (Instant.now().epochSecond -1))
+    }
+
+    @Test
+    fun StorageServiceTest_WindMeasurementEmpty(){
+        // ARRANGE
+        startNewTrace()
+        var trace = service.trace
+
+        // ACT
+        var windMeasurementList = trace?.let { service.GetWindMeasurementList(it) }
+        // ASSERT
+        assertEquals(0, windMeasurementList?.size)
+    }
+
+    @Test
+    fun StorageServiceTest_WindMeasurementMultiple(){
+        // ARRANGE
+        RxJavaPlugins.setIoSchedulerHandler{ Schedulers.trampoline()}
+
+        startNewTrace()
+        lateinit var partitionKeyList: List<String>
+        val measurementList = generateWindMeasurementList(120)
+        var measurementObservable = measurementList
+            .toObservable()
+            .observeOn(Schedulers.io())
+            .doFinally(){
+                var trace = service.trace
+                if (trace != null) {
+                    partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
+                }
+            }
+        service.bindMeasurementObserver( measurementObservable)
+        var trace = service.trace
+
+        // ACT
+        var windMeasurementList = trace?.let { service.GetWindMeasurementList(it) }
+        // ASSERT
+        assertEquals(120, windMeasurementList?.size)
+    }
 
     private fun generateWindMeasurementList(arraySize:Int): MutableList<WindMeasurement>{
         var partitionKey : Int = 0;

@@ -111,6 +111,28 @@ class StorageService: Service() {
         return partitionKey.toStringKey()
     }
 
+    public fun GetTraceList() : List<PaperTrace>{
+        var traceList: MutableList<PaperTrace> = mutableListOf()
+        var traceListKeys = Paper.book().allKeys
+        traceListKeys.forEach {
+            var nextTrace = Paper.book().read<PaperTrace>(it)
+            traceList.add(nextTrace)
+        }
+        return traceList
+    }
+
+    public fun GetWindMeasurementList(trace: PaperTrace) : List<WindMeasurement>{
+        var windMeasurementList: MutableList<WindMeasurement> = mutableListOf()
+        checkTrace(trace)
+        var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
+        partitionKeys.forEach {
+            var partition = Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
+            windMeasurementList.addAll(partition)
+        }
+
+        return windMeasurementList
+    }
+
     private fun checkTrace(traceToVerify: PaperTrace){
         var trace = Paper.book().read<PaperTrace>(traceToVerify.key.toStringKey())
         if (trace == null){
