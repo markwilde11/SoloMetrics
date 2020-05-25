@@ -51,15 +51,6 @@ stages:
         keepToken: false
         tokenPrefix: '#{'
         tokenSuffix: '}#'
-    - task: Gradle@2
-      displayName: Build and Unit Test
-      inputs:
-        workingDirectory: 'kotlin'
-        gradleWrapperFile: 'kotlin/gradlew'
-        gradleOptions: '-Xmx3072m '
-        publishJUnitResults: false
-        testResultsFiles: '**/TEST-*.xml'
-        tasks: 'assembleDebug'
     - bash: chmod +x kotlin/pipelines/kotlin_integration_test.sh
     - bash: ./kotlin/pipelines/kotlin_integration_test.sh
     # KUDOS
@@ -71,7 +62,7 @@ stages:
         gradleOptions: '-Xmx3072m'
         publishJUnitResults: false
         testResultsFiles: '**/TEST-*.xml'
-        tasks: 'connectedDebugAndroidTest'
+        tasks: 'assembleDebug connectedDebugAndroidTest'
       displayName: 'Run Instrumented Tests' 
     # - bash: | 
     #     ./kotlin/gradlew connectedDebugAndroidTest --stacktrace -p ./kotlin
