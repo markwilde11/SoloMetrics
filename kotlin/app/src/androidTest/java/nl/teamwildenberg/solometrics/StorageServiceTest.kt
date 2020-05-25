@@ -10,16 +10,15 @@ import io.paperdb.Paper
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.toObservable
 import io.reactivex.schedulers.Schedulers
-import junit.framework.Assert.*
+import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertTrue
 import nl.teamwildenberg.SoloMetrics.Extensions.toStringKey
 import nl.teamwildenberg.SoloMetrics.Service.PaperTrace
 import nl.teamwildenberg.SoloMetrics.Service.StorageService
 import nl.teamwildenberg.SoloMetrics.Service.WindMeasurement
 import nl.teamwildenberg.solometrics.Service.PaperMeasurement
-import org.hamcrest.CoreMatchers.`is`
 import org.junit.*
 import org.junit.runner.RunWith
-import java.lang.Exception
 import java.time.Instant
 
 /**
