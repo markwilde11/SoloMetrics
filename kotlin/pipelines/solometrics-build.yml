@@ -37,7 +37,7 @@ stages:
       name: GitVersionPipeline        
   - job: BuildAndTest
     pool: 
-      vmImage: ubuntu-latest
+      vmImage: macOs-latest
     variables:
       DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: Versioning
@@ -64,10 +64,19 @@ stages:
     - bash: ./kotlin/pipelines/kotlin_integration_test.sh
     # KUDOS
     # https://medium.com/genetec-tech/android-ui-testing-in-azure-devops-81bbe7cea9fd
-    - bash: | 
-        ./kotlin/gradlew connectedDebugAndroidTest --stacktrace -p ./kotlin
-        ./kotlin/gradlew --stop
+    - task: Gradle@2
+      inputs:
+        workingDirectory: 'kotlin'
+        gradleWrapperFile: 'kotlin/gradlew'
+        gradleOptions: '-Xmx3072m'
+        publishJUnitResults: false
+        testResultsFiles: '**/TEST-*.xml'
+        tasks: 'connectedDebugAndroidTest'
       displayName: 'Run Instrumented Tests' 
+    # - bash: | 
+    #     ./kotlin/gradlew connectedDebugAndroidTest --stacktrace -p ./kotlin
+    #     ./kotlin/gradlew --stop
+    #   displayName: 'Run Instrumented Tests' 
     - task: PublishTestResults@2
       displayName: 'Publish Test Results'
       inputs:
@@ -78,7 +87,7 @@ stages:
   - job: PackageAndPublish
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     pool: 
-      vmImage: macOS-latest
+      vmImage: ubuntu-latest
     variables:
       DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
     dependsOn: BuildAndTest
