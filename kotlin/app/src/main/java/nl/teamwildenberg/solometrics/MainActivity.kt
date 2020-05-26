@@ -96,6 +96,20 @@ class MainActivity : ActivityBase(),CoroutineScope {
         this.unbindService(storageServiceConnection)
     }
 
+    private suspend fun openTraceListActivity(thisActivity: Activity) {
+        startActivityForResult(intent, 3)
+        val changePageIntent = Intent(thisActivity, TraceListActivity::class.java)
+        var activityResult: ActivityResult?
+
+        launch {
+
+            activityResult = launchIntent(changePageIntent).await()
+            if (activityResult?.resultCode == RESULT_OK) {
+
+            }
+        }
+    }
+
     private suspend fun discoverDevice(deviceType: DeviceTypeEnum, thisActivity: Activity) {
         var permissionResult = this.requestPermissionss(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, activityRequestCode =  1)
 
