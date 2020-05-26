@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">SoloMetrics</string>
     <string name="action_settings">Settings</string>
-    <string name="title_activity_device_list">Bluetooth Discovery</string>
+    <string name="title_activity_device_list">SoloMetrics: Discovery</string>
+    <string name="title_activity_trace_list">SoloMetrics: Tracks</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

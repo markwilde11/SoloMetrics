@@ -78,6 +78,12 @@ class MainActivity : ActivityBase(),CoroutineScope {
                 stopService(storageServiceIntent)
             }
         }
+
+        TraceListButton.setOnClickListener{view->
+            launch{
+                openTraceListActivity(thisActivity)
+            }
+        }
     }
 
     override fun onResume() {

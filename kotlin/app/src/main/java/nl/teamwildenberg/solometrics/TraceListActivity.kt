@@ -10,39 +10,26 @@ import android.os.IBinder
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
-import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import io.reactivex.Observable
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
-import kotlinx.android.synthetic.main.device_list_activity.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import nl.teamwildenberg.solometrics.Adapter.DeviceListAdapter
 import nl.teamwildenberg.solometrics.Adapter.TraceListAdapter
-import nl.teamwildenberg.solometrics.Ble.BleService
-import nl.teamwildenberg.solometrics.Ble.BlueDevice
-import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
-import nl.teamwildenberg.solometrics.Extensions.toStringKey
 import nl.teamwildenberg.solometrics.Service.PaperTrace
-import nl.teamwildenberg.solometrics.Service.ScreenDuinoService
 import nl.teamwildenberg.solometrics.Service.StorageService
-import java.util.concurrent.TimeUnit
 
 
 class TraceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private var storageBinding: StorageService.LocalBinder? = null
+    var traceList: MutableList<PaperTrace> = mutableListOf()
+    lateinit var traceAdapter: TraceListAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         lateinit var traceListView: ListView
-        lateinit var traceAdapter: TraceListAdapter
-        var traceList: MutableList<PaperTrace> = mutableListOf()
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.device_list_activity)
+        setContentView(R.layout.trace_list_activity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         traceAdapter = TraceListAdapter(this, traceList)
@@ -56,9 +43,6 @@ class TraceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 //            setResult(Activity.RESULT_OK, finishIntent)
 //            this.finish();
         }
-
-        var progbar = findViewById<ProgressBar>(R.id.toolbarprogress)
-        progbar.setProgress(0)
 
         var startButton = findViewById<FloatingActionButton>(R.id.startButton)
         startButton.setOnClickListener{
@@ -112,6 +96,11 @@ class TraceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private val storageServiceConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
+            var service = storageBinding!!.getService()
+            var list = service?.GetTraceList()
+            traceList.clear()
+            traceList.addAll(list)
+            traceAdapter.notifyDataSetChanged()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
