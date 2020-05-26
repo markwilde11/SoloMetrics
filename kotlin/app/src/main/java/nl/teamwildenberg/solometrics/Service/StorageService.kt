@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Service
+package nl.teamwildenberg.solometrics.Service
 
 import android.app.Service
 import android.content.Intent
@@ -9,8 +9,8 @@ import io.paperdb.Paper
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
-import nl.teamwildenberg.SoloMetrics.Extensions.toStringKey
+import nl.teamwildenberg.solometrics.Ble.BlueDevice
+import nl.teamwildenberg.solometrics.Extensions.toStringKey
 import nl.teamwildenberg.solometrics.Extensions.toPaper
 import nl.teamwildenberg.solometrics.Service.PaperMeasurement
 import java.lang.Exception

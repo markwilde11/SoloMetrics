@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Extensions
+package nl.teamwildenberg.solometrics.Extensions
 
 
 public fun Number.toStringKey(): String{

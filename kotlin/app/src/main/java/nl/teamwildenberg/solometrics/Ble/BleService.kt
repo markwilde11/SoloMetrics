@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Ble
+package nl.teamwildenberg.solometrics.Ble
 
 import android.content.Context
 import java.lang.Exception

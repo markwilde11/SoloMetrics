@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Service
+package nl.teamwildenberg.solometrics.Service
 
 public class ScreenStatus (
     var screenConnected: Boolean,

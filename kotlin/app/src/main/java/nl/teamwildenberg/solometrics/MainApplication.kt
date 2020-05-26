@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics
+package nl.teamwildenberg.solometrics
 
 import android.app.Application
 import android.content.Context

@@ -1,6 +1,6 @@
 package nl.teamwildenberg.solometrics.Extensions
 
-import nl.teamwildenberg.SoloMetrics.Service.WindMeasurement
+import nl.teamwildenberg.solometrics.Service.WindMeasurement
 import nl.teamwildenberg.solometrics.Service.PaperMeasurement
 import java.time.Instant
 

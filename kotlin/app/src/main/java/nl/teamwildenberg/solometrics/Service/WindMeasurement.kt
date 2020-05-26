@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Service
+package nl.teamwildenberg.solometrics.Service
 
 public class WindMeasurement (
     val WindSpeed: Int,

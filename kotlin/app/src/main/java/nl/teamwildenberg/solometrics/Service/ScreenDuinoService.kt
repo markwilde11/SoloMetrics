@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Service
+package nl.teamwildenberg.solometrics.Service
 
 import android.app.*
 import android.content.ComponentName
@@ -18,11 +18,11 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import nl.teamwildenberg.SoloMetrics.Ble.BleService
-import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
-import nl.teamwildenberg.SoloMetrics.Ble.DeviceTypeEnum
-import nl.teamwildenberg.SoloMetrics.MainActivity
-import nl.teamwildenberg.SoloMetrics.R
+import nl.teamwildenberg.solometrics.Ble.BleService
+import nl.teamwildenberg.solometrics.Ble.BlueDevice
+import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.MainActivity
+import nl.teamwildenberg.solometrics.R
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt

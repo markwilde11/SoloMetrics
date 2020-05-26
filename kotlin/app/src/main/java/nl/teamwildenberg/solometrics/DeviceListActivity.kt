@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics
+package nl.teamwildenberg.solometrics
 
 import android.R.attr.*
 import android.app.Activity
@@ -21,10 +21,10 @@ import kotlinx.android.synthetic.main.device_list_activity.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import nl.teamwildenberg.SoloMetrics.Adapter.DeviceListAdapter
-import nl.teamwildenberg.SoloMetrics.Ble.BleService
-import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
-import nl.teamwildenberg.SoloMetrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.Adapter.DeviceListAdapter
+import nl.teamwildenberg.solometrics.Ble.BleService
+import nl.teamwildenberg.solometrics.Ble.BlueDevice
+import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
 import java.util.concurrent.TimeUnit
 
 

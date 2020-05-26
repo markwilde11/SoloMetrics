@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics
+package nl.teamwildenberg.solometrics
 
 import android.Manifest
 import android.app.Activity
@@ -22,10 +22,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
-import nl.teamwildenberg.SoloMetrics.Ble.DeviceTypeEnum
-import nl.teamwildenberg.SoloMetrics.Service.ScreenDuinoService
-import nl.teamwildenberg.SoloMetrics.Service.StorageService
+import nl.teamwildenberg.solometrics.Ble.BlueDevice
+import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.Service.ScreenDuinoService
+import nl.teamwildenberg.solometrics.Service.StorageService
 import kotlin.coroutines.CoroutineContext
 
 
