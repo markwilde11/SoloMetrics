@@ -17,13 +17,18 @@
             android:src="@drawable/ic_sd_storage_black_24dp"
             android:scaleType="fitCenter">
         </ImageView>
-        <ListView
+        <ExpandableListView
             android:id="@+id/traceListView"
             android:choiceMode="singleChoice"
             android:listSelector="#666666"
-            android:layout_width="match_parent"
+            android:divider="#A4C739"
+            android:dividerHeight="0.5dp"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:indicatorLeft="?android:attr/expandableListPreferredItemIndicatorLeft"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content">
-        </ListView>
+        </ExpandableListView>
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/startButton"
             android:layout_width="wrap_content"

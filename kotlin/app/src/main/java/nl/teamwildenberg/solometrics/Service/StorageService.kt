@@ -121,6 +121,18 @@ class StorageService: Service() {
         return traceList
     }
 
+    public fun GetPartionList(trace: PaperTrace): List<List<WindMeasurement>>{
+        var partitionList: MutableList<List<WindMeasurement>> = mutableListOf()
+        checkTrace(trace)
+        var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
+        partitionKeys.forEach {
+            var partition = Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
+            partitionList.add(partition)
+        }
+
+        return partitionList
+    }
+
     public fun GetWindMeasurementList(trace: PaperTrace) : List<WindMeasurement>{
         var windMeasurementList: MutableList<WindMeasurement> = mutableListOf()
         checkTrace(trace)

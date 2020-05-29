@@ -29,6 +29,4 @@
     android:layout_marginTop="4dp"
     app:layout_constraintLeft_toRightOf="@+id/image"
     app:layout_constraintTop_toBottomOf="@+id/title" />
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
