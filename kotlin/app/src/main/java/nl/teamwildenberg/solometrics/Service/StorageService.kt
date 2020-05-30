@@ -9,16 +9,14 @@ import io.paperdb.Paper
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import nl.teamwildenberg.solometrics.Ble.BlueDevice
 import nl.teamwildenberg.solometrics.Extensions.toStringKey
 import nl.teamwildenberg.solometrics.Extensions.toPaper
-import nl.teamwildenberg.solometrics.Service.PaperMeasurement
 import java.lang.Exception
 import java.time.Instant
 
 class StorageService: Service() {
     private val myBinder = LocalBinder()
-    public var trace: PaperTrace? = null;
+    public var activeTrace: PaperTrace? = null;
     private val measurementDisposable: CompositeDisposable = CompositeDisposable()
 
     override fun onCreate() {
@@ -60,7 +58,7 @@ class StorageService: Service() {
     }
 
     private fun StartNewTrace() {
-        if (trace == null) {
+        if (activeTrace == null) {
             var traceKeys = Paper.book().allKeys
             var newKey = 0
             if (traceKeys.size > 0) {
@@ -68,14 +66,14 @@ class StorageService: Service() {
                 var lastTrace = Paper.book().read<PaperTrace>(lastKey)
                 newKey = lastTrace.key
             }
-            trace = PaperTrace(++newKey, Instant.now().epochSecond)
-            Paper.book().write(newKey.toStringKey(), trace)
+            activeTrace = PaperTrace(++newKey, Instant.now().epochSecond)
+            Paper.book().write(newKey.toStringKey(), activeTrace)
         }
     }
 
     public fun StopTrace(){
-        if (trace != null){
-            trace = null
+        if (activeTrace != null){
+            activeTrace = null
         }
 
     }
@@ -87,7 +85,7 @@ class StorageService: Service() {
             .buffer(60)
             .subscribe { msmntList ->
 
-                trace?.let { AddMeasurements(it, msmntList) }
+                activeTrace?.let { AddMeasurements(it, msmntList) }
             }
     }
 

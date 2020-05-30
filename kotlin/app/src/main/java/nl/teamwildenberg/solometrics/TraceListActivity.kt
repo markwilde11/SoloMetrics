@@ -61,25 +61,37 @@ class TraceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         }
 
-//
-//        var metrics = DisplayMetrics()
-//        getWindowManager().getDefaultDisplay().getMetrics(metrics)
-//        var width = metrics.widthPixels
-//
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
-//            traceListView.setIndicatorBounds(
-//                width - GetDipsFromPixel(50),
-//                width - GetDipsFromPixel(10)
-//            )
-//        } else {
-//            traceListView.setIndicatorBoundsRelative(
-//                width - GetDipsFromPixel(50),
-//                width - GetDipsFromPixel(10)
-//            )
-//        }
+
+        var metrics = DisplayMetrics()
+        getWindowManager().getDefaultDisplay().getMetrics(metrics)
+        var width = metrics.widthPixels
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            traceListView.setIndicatorBounds(
+                width - GetDipsFromPixel(50),
+                width - GetDipsFromPixel(10)
+            )
+        } else {
+            traceListView.setIndicatorBoundsRelative(
+                width - GetDipsFromPixel(50),
+                width - GetDipsFromPixel(10)
+            )
+        }
 
         var startButton = findViewById<FloatingActionButton>(R.id.startButton)
         startButton.setOnClickListener{
+            var storageServiceIntent = Intent(this, StorageService::class.java)
+            if (storageBinding != null){
+                var service = storageBinding!!.getService()
+                if (service.activeTrace == null) {
+                    storageServiceIntent.putExtra("action", "start")
+                    startService(storageServiceIntent)
+                    loadTraceList()
+                }
+                else{
+                    stopService(storageServiceIntent)
+                }
+            }
         }
 
         var storageServiceIntent = Intent(this, StorageService::class.java)
@@ -137,18 +149,23 @@ class TraceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private val storageServiceConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
-            var service = storageBinding!!.getService()
-            var list = service?.GetTraceList()
-            traceList.clear()
-            list.forEach{trace: PaperTrace ->
-                traceList.add(PaperTraceItem(trace, null))
-            }
-
-            traceAdapter.notifyDataSetChanged()
+            loadTraceList()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             storageBinding = null
         }
+    }
+
+    private fun loadTraceList(){
+        var service = storageBinding!!.getService()
+        var list = service?.GetTraceList()
+        traceList.clear()
+        list.forEach{trace: PaperTrace ->
+            traceList.add(PaperTraceItem(trace, null))
+        }
+
+        traceAdapter.notifyDataSetChanged()
+
     }
 }

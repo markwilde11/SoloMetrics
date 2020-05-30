@@ -86,8 +86,8 @@ class StorageServiceTest {
             // ACT
             startNewTrace()
             // ASSERT
-            assertEquals(service.trace?.key, 2)
-            assertEquals(service.trace?.epoch, Instant.now().epochSecond)
+            assertEquals(service.activeTrace?.key, 2)
+            assertEquals(service.activeTrace?.epoch, Instant.now().epochSecond)
         }
     }
     @Test
@@ -100,7 +100,7 @@ class StorageServiceTest {
         startNewTrace()
 
         // ASSERT
-        assertEquals(2, service.trace?.key)
+        assertEquals(2, service.activeTrace?.key)
     }
 
     @Test()
@@ -111,13 +111,13 @@ class StorageServiceTest {
 
         // ACT
         startNewTrace()
-        assertEquals(1, service.trace?.key)
+        assertEquals(1, service.activeTrace?.key)
     }
     @Test
     fun StorageServiceTest_Partition_ToNewTrace(){
         startNewTrace()
         var measurementList = generateMeasurementList(10)
-        var partitionKey = service.trace?.let { service.AddMeasurements(it, measurementList) }
+        var partitionKey = service.activeTrace?.let { service.AddMeasurements(it, measurementList) }
         assertEquals(1.toStringKey(), partitionKey)
     }
 
@@ -126,16 +126,16 @@ class StorageServiceTest {
         // ARRANGE
         startNewTrace()
         var measurementList = generateMeasurementList(10)
-        service.trace?.let { service.AddMeasurements(it, measurementList) }
+        service.activeTrace?.let { service.AddMeasurements(it, measurementList) }
 
         // ACT
-        var partitionKey = service.trace?.let { service.AddMeasurements(it, measurementList) }
+        var partitionKey = service.activeTrace?.let { service.AddMeasurements(it, measurementList) }
 
         // ASSERT
         assertEquals(partitionKey, 2.toStringKey())
-        var partitionKeyList = Paper.book(service.trace?.key?.toStringKey()).allKeys
+        var partitionKeyList = Paper.book(service.activeTrace?.key?.toStringKey()).allKeys
         assertEquals(partitionKeyList.size, 2)
-        var measurementListResult = Paper.book(service.trace?.key?.toStringKey()).read<MutableList<PaperMeasurement>>(partitionKey)
+        var measurementListResult = Paper.book(service.activeTrace?.key?.toStringKey()).read<MutableList<PaperMeasurement>>(partitionKey)
         assertEquals(measurementList.size, measurementListResult.size)
     }
 
@@ -151,7 +151,7 @@ class StorageServiceTest {
             .toObservable()
             .observeOn(Schedulers.io())
             .doFinally(){
-                var trace = service.trace
+                var trace = service.activeTrace
                 if (trace != null) {
                     partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
                 }
@@ -174,7 +174,7 @@ class StorageServiceTest {
             .toObservable()
             .observeOn(Schedulers.io())
             .doFinally(){
-                var trace = service.trace
+                var trace = service.activeTrace
                 if (trace != null) {
                     partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
                 }
@@ -214,7 +214,7 @@ class StorageServiceTest {
     fun StorageServiceTest_WindMeasurementEmpty(){
         // ARRANGE
         startNewTrace()
-        var trace = service.trace
+        var trace = service.activeTrace
 
         // ACT
         var windMeasurementList = trace?.let { service.GetWindMeasurementList(it) }
@@ -234,13 +234,13 @@ class StorageServiceTest {
             .toObservable()
             .observeOn(Schedulers.io())
             .doFinally(){
-                var trace = service.trace
+                var trace = service.activeTrace
                 if (trace != null) {
                     partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
                 }
             }
         service.bindMeasurementObserver( measurementObservable)
-        var trace = service.trace
+        var trace = service.activeTrace
 
         // ACT
         var windMeasurementList = trace?.let { service.GetWindMeasurementList(it) }

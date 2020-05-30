@@ -88,9 +88,9 @@ class MainActivity : ActivityBase(),CoroutineScope {
         }
 
         var fabList: MutableList<LinearLayout> = mutableListOf()
-        fabList.add(fabLayout1)
-        fabList.add(fabLayout2)
         fabList.add(fabLayout3)
+        fabList.add(fabLayout2)
+        fabList.add(fabLayout1)
         initFloatingMenu(fabBGLayout, fab, fabList)
     }
 
