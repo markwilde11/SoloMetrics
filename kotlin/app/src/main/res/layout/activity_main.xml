@@ -150,39 +150,96 @@
         </LinearLayout>
     </LinearLayout>
 
+    <View
+        android:id="@+id/fabBGLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorTransBg"
+        android:visibility="gone" />
+
     <LinearLayout
-        android:orientation="vertical"
+        android:id="@+id/fabLayout1"
         android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_height="wrap_content">
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/UltrasonicButton"
+        android:layout_marginRight="@dimen/child_fab_margin"
+        android:layout_marginBottom="@dimen/standard_23"
+        android:clipToPadding="false"
+        android:gravity="center_vertical"
+        android:padding="@dimen/standard_12"
+        android:visibility="gone">
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="@dimen/fab_margin"
-            app:srcCompat="@drawable/ic_nature_black_24dp" />
+            android:text="Ultrasonic Disco" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/ScreenDuinoButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="@dimen/fab_margin"
-            app:srcCompat="@drawable/ic_web_black_24dp" />
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/StorageButton"
+            android:layout_marginLeft="10dp"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_nature_black_24dp"/>
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/fabLayout2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginRight="@dimen/child_fab_margin"
+        android:layout_marginBottom="@dimen/standard_23"
+        android:clipToPadding="false"
+        android:gravity="center_vertical"
+        android:padding="@dimen/standard_12"
+        android:visibility="gone">
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="@dimen/fab_margin"
-            app:srcCompat="@drawable/ic_save_black_24dp" />
+            android:text="Screen Disco" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/UltrasonicButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_web_black_24dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/fabLayout3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginRight="@dimen/child_fab_margin"
+        android:layout_marginBottom="@dimen/standard_23"
+        android:clipToPadding="false"
+        android:gravity="center_vertical"
+        android:padding="@dimen/standard_12"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tracking" />
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/TraceListButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="@dimen/fab_margin"
+            android:layout_marginLeft="10dp"
+            app:fabSize="mini"
             app:srcCompat="@drawable/ic_sd_storage_black_24dp" />
     </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        android:gravity="center_vertical"
+        app:srcCompat="@android:drawable/ic_dialog_info" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

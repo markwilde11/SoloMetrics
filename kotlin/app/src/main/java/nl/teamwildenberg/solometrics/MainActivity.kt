@@ -10,8 +10,10 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -67,23 +69,29 @@ class MainActivity : ActivityBase(),CoroutineScope {
                 }
             }
         }
-        StorageButton.setOnClickListener { view ->
-            var storageServiceIntent = Intent(this, StorageService::class.java)
-            if (storageBinding == null){
-                storageServiceIntent.putExtra("action", "start")
-                startService(storageServiceIntent)
-            }
-            else
-            {
-                stopService(storageServiceIntent)
-            }
-        }
+//        StorageButton.setOnClickListener { view ->
+//            var storageServiceIntent = Intent(this, StorageService::class.java)
+//            if (storageBinding == null){
+//                storageServiceIntent.putExtra("action", "start")
+//                startService(storageServiceIntent)
+//            }
+//            else
+//            {
+//                stopService(storageServiceIntent)
+//            }
+//        }
 
         TraceListButton.setOnClickListener{view->
             launch{
                 openTraceListActivity(thisActivity)
             }
         }
+
+        var fabList: MutableList<LinearLayout> = mutableListOf()
+        fabList.add(fabLayout1)
+        fabList.add(fabLayout2)
+        fabList.add(fabLayout3)
+        initFloatingMenu(fabBGLayout, fab, fabList)
     }
 
     override fun onResume() {
