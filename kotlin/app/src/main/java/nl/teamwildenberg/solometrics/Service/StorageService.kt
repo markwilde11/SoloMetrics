@@ -9,6 +9,8 @@ import io.paperdb.Paper
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
 import nl.teamwildenberg.solometrics.Extensions.toStringKey
 import nl.teamwildenberg.solometrics.Extensions.toPaper
 import java.lang.Exception
@@ -16,6 +18,7 @@ import java.time.Instant
 
 class StorageService: Service() {
     private val myBinder = LocalBinder()
+    public val storageStatusChannel: Subject<StorageStatus> = PublishSubject.create<StorageStatus>()
     public var activeTrace: PaperTrace? = null;
     private val measurementDisposable: CompositeDisposable = CompositeDisposable()
 
@@ -68,11 +71,13 @@ class StorageService: Service() {
             }
             activeTrace = PaperTrace(++newKey, Instant.now().epochSecond)
             Paper.book().write(newKey.toStringKey(), activeTrace)
+            storageStatusChannel.onNext(StorageStatus(StorageStatusEnum.StartNew, activeTrace!!))
         }
     }
 
     public fun StopTrace(){
         if (activeTrace != null){
+            storageStatusChannel.onNext(StorageStatus(StorageStatusEnum.Stopped, activeTrace!!))
             activeTrace = null
         }
 
@@ -143,10 +148,28 @@ class StorageService: Service() {
         return windMeasurementList
     }
 
+    public fun DeleteTrace(trace: PaperTrace): DeleteTraceResult{
+        var stringKey =trace.key.toStringKey()
+        if ( !Paper.book().contains(stringKey)){
+            return DeleteTraceResult.NotFound
+        }
+        else {
+            Paper.book(stringKey).destroy()
+            Paper.book().delete(stringKey)
+            storageStatusChannel.onNext(StorageStatus(StorageStatusEnum.Delete, trace))
+            return DeleteTraceResult.Success
+        }
+    }
+
     private fun checkTrace(traceToVerify: PaperTrace){
         var trace = Paper.book().read<PaperTrace>(traceToVerify.key.toStringKey())
         if (trace == null){
             throw Exception("Trace '${traceToVerify.key}' does not exist")
         }
+    }
+
+    public enum class DeleteTraceResult {
+        Success,
+        NotFound
     }
 }

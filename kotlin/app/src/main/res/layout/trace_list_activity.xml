@@ -29,12 +29,100 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
         </ExpandableListView>
+
+        <View
+            android:id="@+id/fabBGLayoutTrace"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorTransBg"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/fabLayout1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginRight="@dimen/child_fab_margin"
+            android:layout_marginBottom="@dimen/standard_23"
+            android:clipToPadding="false"
+            android:gravity="center_vertical"
+            android:padding="@dimen/standard_12"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Start new" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/StartTraceListButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                app:fabSize="mini"
+                app:srcCompat="@drawable/ic_baseline_play_circle_outline_24" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fabLayout2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginRight="@dimen/child_fab_margin"
+            android:layout_marginBottom="@dimen/standard_23"
+            android:clipToPadding="false"
+            android:gravity="center_vertical"
+            android:padding="@dimen/standard_12"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save CSV" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/SaveTraceListButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                app:fabSize="mini"
+                app:srcCompat="@drawable/ic_save_black_24dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fabLayout3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginRight="@dimen/child_fab_margin"
+            android:layout_marginBottom="@dimen/standard_23"
+            android:clipToPadding="false"
+            android:gravity="center_vertical"
+            android:padding="@dimen/standard_12"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete Trace" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/DeleteTraceListButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                app:fabSize="mini"
+                app:srcCompat="@drawable/ic_baseline_delete_24" />
+        </LinearLayout>
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/startButton"
+            android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/fab_margin"
-            app:srcCompat="@android:drawable/ic_input_add" />
+            android:gravity="center_vertical"
+            app:srcCompat="@android:drawable/ic_dialog_info" />
+
     </FrameLayout>
 </LinearLayout>

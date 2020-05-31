@@ -12,46 +12,51 @@ import android.util.DisplayMetrics
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ExpandableListView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main.fab
+import kotlinx.android.synthetic.main.activity_main.fabLayout1
+import kotlinx.android.synthetic.main.activity_main.fabLayout2
+import kotlinx.android.synthetic.main.activity_main.fabLayout3
+import kotlinx.android.synthetic.main.trace_list_activity.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import nl.teamwildenberg.solometrics.Adapter.PaperTraceItem
 import nl.teamwildenberg.solometrics.Adapter.TraceListAdapter
 import nl.teamwildenberg.solometrics.Ble.BlueDevice
+import nl.teamwildenberg.solometrics.Extensions.setEnabledState
 import nl.teamwildenberg.solometrics.Service.PaperTrace
 import nl.teamwildenberg.solometrics.Service.StorageService
 import nl.teamwildenberg.solometrics.Service.WindMeasurement
 
 
-class TraceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
     private var storageBinding: StorageService.LocalBinder? = null
     var traceList: MutableList<PaperTraceItem> = mutableListOf()
     lateinit var traceAdapter: TraceListAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        lateinit var traceListView: ExpandableListView
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.trace_list_activity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        DeleteTraceListButton.setEnabledState(false)
+        SaveTraceListButton.setEnabledState(false)
+
         traceAdapter = TraceListAdapter(this, traceList)
-        traceListView = findViewById<ExpandableListView>(R.id.traceListView)
         traceListView.setAdapter(traceAdapter)
-        traceListView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
-            // This is your listview's selected item
-//            var selectedItem = parent.getItemAtPosition(position) as PaperTrace
-//            var finishIntent = Intent(this, TraceListActivity::class.java)
-//            finishIntent.putExtra("traceKey", selectedItem.key.toStringKey())
-//            setResult(Activity.RESULT_OK, finishIntent)
-//            this.finish();
-        }
 
         traceListView.setOnGroupExpandListener { groupPosition: Int ->
             var service = storageBinding?.getService()
             var selectedItem = traceListView.getItemAtPosition(groupPosition) as PaperTraceItem
+
+            DeleteTraceListButton.setEnabledState(true)
+            SaveTraceListButton.setEnabledState(true)
+
             if (service != null){
                 if (selectedItem.PartionList == null) {
                     var partionList = service.GetPartionList(selectedItem.Trace)
@@ -78,21 +83,26 @@ class TraceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             )
         }
 
-        var startButton = findViewById<FloatingActionButton>(R.id.startButton)
-        startButton.setOnClickListener{
+        StartTraceListButton.setOnClickListener{
             var storageServiceIntent = Intent(this, StorageService::class.java)
             if (storageBinding != null){
                 var service = storageBinding!!.getService()
                 if (service.activeTrace == null) {
                     storageServiceIntent.putExtra("action", "start")
                     startService(storageServiceIntent)
-                    loadTraceList()
                 }
                 else{
                     stopService(storageServiceIntent)
                 }
             }
         }
+
+        var fabList: MutableList<LinearLayout> = mutableListOf()
+        fabList.add(fabLayout3)
+        fabList.add(fabLayout2)
+        fabList.add(fabLayout1)
+        initFloatingMenu(this.fabBGLayoutTrace, fab, fabList)
+
 
         var storageServiceIntent = Intent(this, StorageService::class.java)
         startService(storageServiceIntent)

@@ -10,15 +10,12 @@ import io.paperdb.Paper
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.rxkotlin.toObservable
 import io.reactivex.schedulers.Schedulers
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertTrue
+import junit.framework.Assert.*
 import nl.teamwildenberg.solometrics.Extensions.toStringKey
-import nl.teamwildenberg.solometrics.Service.PaperTrace
-import nl.teamwildenberg.solometrics.Service.StorageService
-import nl.teamwildenberg.solometrics.Service.WindMeasurement
-import nl.teamwildenberg.solometrics.Service.PaperMeasurement
+import nl.teamwildenberg.solometrics.Service.*
 import org.junit.*
 import org.junit.runner.RunWith
+import java.lang.RuntimeException
 import java.time.Instant
 
 /**
@@ -77,19 +74,56 @@ class StorageServiceTest {
         serviceRule.startService(serviceIntent)
     }
 
+    private fun stopTrace(trace: PaperTrace){
+        val serviceIntent = Intent(
+            ApplicationProvider.getApplicationContext<Context>(),
+            StorageService::class.java
+        ).apply {
+            // Data can be passed to the service via the Intent.
+            putExtra("action", "stop")
+        }
+        serviceRule.startService(serviceIntent)
+    }
+
     @Test
     fun StorageServiceTest_traceStart() {
-        @Test
-        fun existingTraceTest_Success() {
-            // ARRANGE
+    //    RxJavaPlugins.setIoSchedulerHandler{ Schedulers.trampoline()}
 
-            // ACT
-            startNewTrace()
-            // ASSERT
-            assertEquals(service.activeTrace?.key, 2)
-            assertEquals(service.activeTrace?.epoch, Instant.now().epochSecond)
-        }
+        // ARRANGE
+        var status: StorageStatus? = null
+        service.storageStatusChannel
+            .subscribe{
+                status = it
+            }
+        // ACT
+        startNewTrace()
+        // ASSERT
+        assertEquals(1, service.activeTrace?.key)
+        assertEquals(service.activeTrace?.epoch, Instant.now().epochSecond)
+        assertEquals(StorageStatusEnum.StartNew, status?.state)
+        assertEquals(service.activeTrace, status?.trace)
     }
+
+    @Test
+    fun StorageServiceTest_traceStop(){
+        // ARRANGE
+        startNewTrace()
+        var trace = service.activeTrace
+        var status: StorageStatus? = null
+        service.storageStatusChannel
+            .subscribe{
+                status = it
+            }
+        // ACT
+        if (trace != null) {
+            stopTrace(trace)
+        }
+        assertNull(service.activeTrace)
+        assertEquals(StorageStatusEnum.Stopped, status?.state)
+        assertEquals(trace, status?.trace)
+
+    }
+
     @Test
     fun StorageServiceTest_traceStart_onExisting() {
         // ARRANGE
@@ -247,6 +281,68 @@ class StorageServiceTest {
         // ASSERT
         assertEquals(120, windMeasurementList?.size)
     }
+
+    @Test
+    fun StorageServiceTest_Delete_Empty(){
+        //ARRANGE
+        startNewTrace()
+        var trace = service.activeTrace
+        var traceKey: String? = trace?.key?.toStringKey();
+        var status: StorageStatus? = null
+        service.storageStatusChannel
+            .subscribe{
+                status = it
+            }
+
+        //ACT
+        if (trace != null) {
+            service.DeleteTrace(trace)
+        }
+
+        //ASSESS
+        var keyList = Paper.book().allKeys.filter{ key -> key == traceKey}
+        assertEquals(0, keyList.size)
+        assertEquals(StorageStatusEnum.Delete, status?.state)
+        assertEquals(status?.trace, trace)
+
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun StorageServiceTest_Delete_Fulll(){
+        //ARRANGE
+        startNewTrace()
+        var measurementList = generateMeasurementList(10)
+        var partitionKey = service.activeTrace?.let { service.AddMeasurements(it, measurementList) }
+        var trace = service.activeTrace
+        var traceKey: String? = trace?.key?.toStringKey();
+
+        //ACT
+        if (trace != null) {
+            var result = service.DeleteTrace(trace)
+
+            //ASSESS
+            assertEquals(StorageService.DeleteTraceResult.Success, result)
+        }
+
+        var keyList = Paper.book().allKeys.filter{ key -> key == traceKey}
+        assertEquals(0, keyList.size)
+        var book = Paper.bookOn(traceKey)
+
+        var partionKeyList = book.allKeys
+    }
+
+    @Test
+    fun StorageServiceTest_Delete_NonExisting(){
+        //ARRANGE
+        var paperTrace = PaperTrace(-1, Instant.now().epochSecond)
+
+        //ACT
+        var result = service.DeleteTrace(paperTrace)
+
+        //ASSERT
+        assertEquals(StorageService.DeleteTraceResult.NotFound, result)
+    }
+
 
     private fun generateWindMeasurementList(arraySize:Int): MutableList<WindMeasurement>{
         var partitionKey : Int = 0;
