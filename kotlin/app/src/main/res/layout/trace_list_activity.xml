@@ -23,8 +23,6 @@
             android:listSelector="#666666"
             android:divider="#A4C739"
             android:dividerHeight="0.5dp"
-            android:focusable="false"
-            android:focusableInTouchMode="false"
             android:indicatorLeft="?android:attr/expandableListPreferredItemIndicatorLeft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">

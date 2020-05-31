@@ -16,6 +16,8 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main.fab
 import kotlinx.android.synthetic.main.activity_main.fabLayout1
@@ -30,6 +32,7 @@ import nl.teamwildenberg.solometrics.Ble.BlueDevice
 import nl.teamwildenberg.solometrics.Extensions.setEnabledState
 import nl.teamwildenberg.solometrics.Service.PaperTrace
 import nl.teamwildenberg.solometrics.Service.StorageService
+import nl.teamwildenberg.solometrics.Service.StorageStatusEnum
 import nl.teamwildenberg.solometrics.Service.WindMeasurement
 
 
@@ -44,26 +47,38 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
         setContentView(R.layout.trace_list_activity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        DeleteTraceListButton.setEnabledState(false)
-        SaveTraceListButton.setEnabledState(false)
 
         traceAdapter = TraceListAdapter(this, traceList)
         traceListView.setAdapter(traceAdapter)
-
+        var selectedTraceItem : PaperTraceItem? = null
         traceListView.setOnGroupExpandListener { groupPosition: Int ->
             var service = storageBinding?.getService()
-            var selectedItem = traceListView.getItemAtPosition(groupPosition) as PaperTraceItem
+            selectedTraceItem = traceListView.getItemAtPosition(groupPosition) as PaperTraceItem
 
             DeleteTraceListButton.setEnabledState(true)
             SaveTraceListButton.setEnabledState(true)
 
             if (service != null){
-                if (selectedItem.PartionList == null) {
-                    var partionList = service.GetPartionList(selectedItem.Trace)
-                    selectedItem.PartionList = partionList
+                if (selectedTraceItem!!.PartionList == null) {
+                    var partionList = service.GetPartionList(selectedTraceItem!!.Trace)
+                    selectedTraceItem!!.PartionList = partionList
                     traceAdapter.notifyDataSetChanged()
                 }}
+        }
 
+        DeleteTraceListButton.setEnabledState(false)
+        SaveTraceListButton.setEnabledState(false)
+
+        DeleteTraceListButton.setOnClickListener{
+            var service = storageBinding?.getService()
+            if (selectedTraceItem != null) {
+                service?.DeleteTrace(selectedTraceItem!!.Trace)
+                selectedTraceItem = null
+                DeleteTraceListButton.setEnabledState(false)
+                SaveTraceListButton.setEnabledState(false)
+
+            }
+            collapseFABMenu()
         }
 
 
@@ -83,6 +98,10 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
             )
         }
 
+        SaveTraceListButton.setOnClickListener {
+            // TODO: Export to csv
+        }
+
         StartTraceListButton.setOnClickListener{
             var storageServiceIntent = Intent(this, StorageService::class.java)
             if (storageBinding != null){
@@ -92,9 +111,11 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
                     startService(storageServiceIntent)
                 }
                 else{
-                    stopService(storageServiceIntent)
+                    storageServiceIntent.putExtra("action", "stop")
+                    startService(storageServiceIntent)
                 }
             }
+            collapseFABMenu()
         }
 
         var fabList: MutableList<LinearLayout> = mutableListOf()
@@ -157,13 +178,32 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
     }
 
     private val storageServiceConnection = object: ServiceConnection {
+        var disp: Disposable? = null
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
-            loadTraceList()
+            var storageService = storageBinding!!.getService()
+            disp = storageService.storageStatusChannel
+                ?.observeOn(AndroidSchedulers.mainThread())
+                ?.subscribe { theStatus ->
+                    when(theStatus.state){
+                        StorageStatusEnum.Delete -> {
+                            var item = traceList.filter { itm -> itm.Trace == theStatus.trace }.first()
+                            traceList.remove(item)
+                            traceAdapter.notifyDataSetChanged()
+                        }
+                        StorageStatusEnum.StartNew -> {
+                            traceList.add(PaperTraceItem(theStatus.trace, null))
+                            traceAdapter.notifyDataSetChanged()
+                        }
+
+                    }
+                }
+                loadTraceList()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             storageBinding = null
+            disp?.dispose()
         }
     }
 

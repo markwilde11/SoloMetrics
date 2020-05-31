@@ -35,6 +35,7 @@ public class TraceListAdapter(private val context: Context,
         return dataSource.size
     }
 
+
     //2
     override fun getGroup(position: Int): Any {
         return dataSource[position]
