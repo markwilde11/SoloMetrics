@@ -36,7 +36,13 @@ class ScreenDuinoService: Service() {
     private var screenInstanceCounter: Int = 0
     private var ultrasonicInstanceCounter: Int = 0
 
-    private val localBinder = LocalBinder(null, null, null, false)
+    var screenDuinoDevice: BlueDevice? = null
+    var ultraSonicDevice: BlueDevice?= null
+    var windMeasurement: WindMeasurement?= null
+    var storageIsConnected: Boolean = false
+    var screenText: String = ""
+
+    private val localBinder = LocalBinder()
     private var storageBinding: StorageService.LocalBinder? = null
 
     override fun onCreate() {
@@ -51,8 +57,8 @@ class ScreenDuinoService: Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
 
-        if (    (localBinder.screenDuinoDevice == null)
-            &&  (localBinder.ultraSonicDevice == null)
+        if (    (screenDuinoDevice == null)
+            &&  (ultraSonicDevice == null)
         ) {
             createNotificationChannel()
             val notificationIntent = Intent(this, MainActivity::class.java)
@@ -62,8 +68,8 @@ class ScreenDuinoService: Service() {
             )
 
             val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("SoloMetrics is connected")
-                .setContentText("Bluetooth: UltraSonic and ScreenDuino")
+                .setContentTitle("SoloMetrics Service")
+                .setContentText("Bluetooth watcher for both the UltraSonic and ScreenDuino")
                 .setColor(Color.rgb(127,0,55))
                 .setSmallIcon(R.drawable.ic_solometrics_notification)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_solometrics_notification_large))
@@ -73,25 +79,25 @@ class ScreenDuinoService: Service() {
             startForeground(startId, notification)
         }
 
-
-
         Log.d("ScreenDuinoService", "starting command - Begin")
         if (intent != null) {
             // hydrate UltraSonic bluetooth device
             Log.d("ScreenDuinoService", "starting command - Hydrate device")
+            val deviceType = intent.getSerializableExtra("deviceType") as DeviceTypeEnum
             val ultraDevice = intent.getParcelableExtra("blueDevice") as BlueDevice
 
             // hydrate ScreenDuino bluetooth device
 
-            if (ultraDevice.type == DeviceTypeEnum.Ultrasonic) {
-                Log.d("ScreenDuinoService", "starting command - Connect to ultrasonic")
-                // connect to UltraSonic
-                connectToUltrasonic(ultraDevice, ultrasonicDisposable)
-            }
-            else {
-                // connect to Screen
-                Log.d("ScreenDuinoService", "starting command - Connect to screen")
-                connectToScreen(ultraDevice, screenDisposable)
+            when (deviceType) {
+                DeviceTypeEnum.SoloScreenDuino ->{
+                    Log.d("ScreenDuinoService", "starting command - Connect to ultrasonic")
+                    // connect to UltraSonic
+                    connectToUltrasonic(ultraDevice, ultrasonicDisposable)
+                }
+                DeviceTypeEnum.SoloScreenDuino -> {
+                    Log.d("ScreenDuinoService", "starting command - Connect to screen")
+                    connectToScreen(ultraDevice, screenDisposable)
+                }
             }
         }
         else
@@ -100,8 +106,8 @@ class ScreenDuinoService: Service() {
         }
 
         Log.d("ScreenDuinoService", "starting command - End")
-        if (    (localBinder.screenDuinoDevice == null)
-            &&  (localBinder.ultraSonicDevice == null)
+        if (    (screenDuinoDevice == null)
+            &&  (ultraSonicDevice == null)
             ){
             this.stopSelf()
         }
@@ -120,23 +126,27 @@ class ScreenDuinoService: Service() {
 
     private fun connectToScreen(theBlueDevice: BlueDevice, theDisposable: CompositeDisposable){
         if (theDisposable.size() == 0) {
-            localBinder.setValue(DeviceTypeEnum.SoloScreenDuino, theBlueDevice)
+            localBinder.screenStatusChannel.onNext(DeviceStatusEnum.Connecting)
             theDisposable.clear()
             GlobalScope.launch {
                 val bls = BleService(this@ScreenDuinoService)
+
                 val obs = bls.Connect(theBlueDevice)
+                obs.take(1).subscribe({char ->
+                    localBinder.screenStatusChannel.onNext(DeviceStatusEnum.Connected)
+                })
+
                 theDisposable += obs
-                    //               .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ char ->
                         Log.d("ScreenDuinoService", "connectToDevice - connected: ${char.value}")
                         var screenValues = parseScreenValues(char.value)
-                        localBinder.setValue("windSpeed", screenValues.WindSpeed.toString())
+                        // broadcast something
                         screenInstanceCounter++
                     })
             }
         }
         else{
-            localBinder.setValue(DeviceTypeEnum.SoloScreenDuino, null)
+            localBinder.screenStatusChannel.onNext(DeviceStatusEnum.Disconnected)
             theDisposable.clear()
         }
     }
@@ -158,8 +168,7 @@ class ScreenDuinoService: Service() {
     private fun connectToUltrasonic(theBlueDevice: BlueDevice, theDisposable: CompositeDisposable) {
 
         if (theDisposable.size() == 0) {
-            localBinder.setValue(DeviceTypeEnum.Ultrasonic, theBlueDevice )
-
+            localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Disconnected)
             GlobalScope.launch {
                 val bls = BleService(this@ScreenDuinoService)
                 val obs = bls.Connect(theBlueDevice)
@@ -167,16 +176,17 @@ class ScreenDuinoService: Service() {
                 // shortlived subscriber to set the user settings
                 userSettingsDisposable += obs.take(1).subscribe({char ->
                     bls.setChar(theBlueDevice, "0000a003-0000-1000-8000-00805f9b34fb", true)
+                    localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Connected)
                 })
 
                 theDisposable += obs
                     .sample(1, TimeUnit.SECONDS)
                     .doOnDispose({
-                        if (localBinder.screenDuinoDevice != null) {
+                        if (screenDuinoDevice != null) {
                             var value = ScreenValue(0,0,0,0)
                             var screenValueArray = serializeScreenValues(value)
                             bls.setChar(
-                                    localBinder.screenDuinoDevice!!,
+                                    screenDuinoDevice!!,
                                     screenValueArray)
                         }
                     })
@@ -196,18 +206,18 @@ class ScreenDuinoService: Service() {
                             BatteryPercentage =  msmnt.BatteryPercentage
                         )
                         var screenValueArray = serializeScreenValues(value)
-                        if (localBinder.screenDuinoDevice != null) {
+                        if (screenDuinoDevice != null) {
                             bls.setChar(
-                                localBinder.screenDuinoDevice!!,
+                                screenDuinoDevice!!,
                                 screenValueArray)
                         }
-                        localBinder.setValue("windMeasurement", msmnt)
+                       // localBinder.setValue("windMeasurement", msmnt)
                         ultrasonicInstanceCounter++
                     })
             }
         }
         else{
-            localBinder.setValue(DeviceTypeEnum.Ultrasonic, null)
+            localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Disconnected)
             theDisposable.clear()
         }
     }
@@ -274,56 +284,38 @@ class ScreenDuinoService: Service() {
     }
 
     inner class LocalBinder(
-        var screenDuinoDevice: BlueDevice?,
-        var ultraSonicDevice: BlueDevice?,
-        var windMeasurement: WindMeasurement?,
-        var storageIsConnected: Boolean,
-        var screenText: String = "",
-        val screenStatusChannel: Subject<ScreenStatus> = PublishSubject.create<ScreenStatus>()
+        val screenStatusChannel: Subject<DeviceStatusEnum> = PublishSubject.create<DeviceStatusEnum>(),
+        val ultrasonicStatusChannel: Subject<DeviceStatusEnum> = PublishSubject.create<DeviceStatusEnum>(),
+        var screenStatus: DeviceStatusEnum = DeviceStatusEnum.Disconnected,
+        var ultrasonicStatus: DeviceStatusEnum = DeviceStatusEnum.Disconnected
     ): Binder(){
+        init{
+            screenStatusChannel.subscribe{
+                screenStatus = it
+            }
+            ultrasonicStatusChannel.subscribe{
+                ultrasonicStatus =it
+            }
+        }
+
         fun getService(): ScreenDuinoService{
             return this@ScreenDuinoService
         }
-
-        fun setValue(type: DeviceTypeEnum, theDevice: BlueDevice?){
-            if (type == DeviceTypeEnum.Ultrasonic)
-                ultraSonicDevice = theDevice
-            else if(type == DeviceTypeEnum.SoloScreenDuino)
-                screenDuinoDevice = theDevice
-
-            broadcastStatus()
-        }
-
-        fun setValue(name: String, theString:String){
-            if (name == "screenText")
-                screenText = theString
-            broadcastStatus()
-        }
-
-        fun setValue(name: String, theValue: WindMeasurement){
-            if (name == "windMeasurement")
-                windMeasurement = theValue
-            broadcastStatus()
-        }
-        private fun broadcastStatus(){
-            val theStatus = ScreenStatus(screenDuinoDevice != null, ultraSonicDevice != null, windMeasurement)
-            screenStatusChannel.onNext(theStatus)
-        }
-
     }
 
     private val myServiceConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
             var storageService = storageBinding!!.getService()
-            storageService.bindMeasurementObserver( localBinder.screenStatusChannel.map{ status -> status.windMeasurement})
-            localBinder.storageIsConnected = true
+            //TODO: wind advertisement
+//            storageService.bindMeasurementObserver( screenStatusChannel.map{ status -> windMeasurement})
+            storageIsConnected = true
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             var storageService = storageBinding!!.getService()
             storageService.unbindMeasurementObserver()
-            localBinder.storageIsConnected = false
+            storageIsConnected = false
             storageBinding = null;
         }
     }

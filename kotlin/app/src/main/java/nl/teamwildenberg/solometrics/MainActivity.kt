@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import android.widget.LinearLayout
@@ -19,6 +18,8 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import nl.teamwildenberg.solometrics.Ble.BlueDevice
 import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.Service.DeviceStatusEnum
 import nl.teamwildenberg.solometrics.Service.ScreenDuinoService
 import nl.teamwildenberg.solometrics.Service.StorageService
 import kotlin.coroutines.CoroutineContext
@@ -50,38 +52,29 @@ class MainActivity : ActivityBase(),CoroutineScope {
         setTitle("SoloMetrics ( v${versionName} )")
 
         UltrasonicButton.setOnClickListener { view ->
+            var deviceType = DeviceTypeEnum.Ultrasonic
             launch {
-                if (screenBinding?.ultraSonicDevice == null) {
-                    discoverDevice(DeviceTypeEnum.Ultrasonic, thisActivity)
+                if (screenBinding == null || screenBinding?.ultrasonicStatus == DeviceStatusEnum.Disconnected) {
+                    discoverDevice(deviceType, thisActivity)
                 }
                 else{
-                    callScreenDuinoService(screenBinding!!.ultraSonicDevice, thisActivity)
+                    callScreenDuinoService(deviceType, null, thisActivity)
                 }
             }
             collapseFABMenu()
         }
         ScreenDuinoButton.setOnClickListener { view ->
+            var deviceType = DeviceTypeEnum.SoloScreenDuino
             launch {
-                if (screenBinding?.screenDuinoDevice == null) {
+                if (screenBinding == null || screenBinding?.ultrasonicStatus == DeviceStatusEnum.Disconnected) {
                     discoverDevice(DeviceTypeEnum.SoloScreenDuino, thisActivity)
                 }
                 else{
-                    callScreenDuinoService(screenBinding!!.screenDuinoDevice, thisActivity)
+                    callScreenDuinoService(deviceType, null, thisActivity)
                 }
             }
             collapseFABMenu()
         }
-//        StorageButton.setOnClickListener { view ->
-//            var storageServiceIntent = Intent(this, StorageService::class.java)
-//            if (storageBinding == null){
-//                storageServiceIntent.putExtra("action", "start")
-//                startService(storageServiceIntent)
-//            }
-//            else
-//            {
-//                stopService(storageServiceIntent)
-//            }
-//        }
 
         TraceListButton.setOnClickListener{view->
             launch{
@@ -146,23 +139,24 @@ class MainActivity : ActivityBase(),CoroutineScope {
                     Snackbar.make(fab, "Connecting to '${theDevice?.name}'", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show()
 
-                    callScreenDuinoService(theDevice, thisActivity)
+                    callScreenDuinoService(deviceType, theDevice, thisActivity)
                 }
             }
         }
     }
 
-    private suspend fun callScreenDuinoService(theDevice: BlueDevice?, thisActivity: Activity){
+    private suspend fun callScreenDuinoService(deviceType: DeviceTypeEnum, theDevice: BlueDevice?, thisActivity: Activity){
         var permissionResult = this.requestPermissionss(Manifest.permission.FOREGROUND_SERVICE, activityRequestCode =  1)
 
         if (permissionResult) {
             val startServiceIntent = Intent(thisActivity, ScreenDuinoService::class.java)
+            startServiceIntent.putExtra("deviceType", deviceType)
             startServiceIntent.putExtra("blueDevice", theDevice)
             ContextCompat.startForegroundService(thisActivity, startServiceIntent)
         }
         else{
             var fab = thisActivity.findViewById<FloatingActionButton>(R.id.UltrasonicButton)
-            Snackbar.make(fab, "Cancelled connection '${theDevice?.name}, allow to run as service'", Snackbar.LENGTH_LONG)
+            Snackbar.make(fab, "Cancelled connection '${deviceType}, allow to run as service'", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
 
         }
@@ -195,6 +189,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
     }
 
     private val screenDuinoServiceConnection = object : ServiceConnection {
+        private var observableDisposable: CompositeDisposable = CompositeDisposable()
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             var txtScreen = findViewById<TextView>(R.id.ScreenTextView)
@@ -207,59 +202,76 @@ class MainActivity : ActivityBase(),CoroutineScope {
 
 
             screenBinding = service as ScreenDuinoService.LocalBinder
-            var disp = screenBinding?.screenStatusChannel
-                ?.observeOn(AndroidSchedulers.mainThread())
-                ?.subscribe({ theStatus ->
-                    if (theStatus.screenConnected ) {
-                        txtScreen.setText("Screen connected: ${theStatus.windMeasurement?.WindSpeed}")
-                    }
-                    else{
-                        txtScreen.setText("---")
-                    }
-                    if (theStatus.ultraSonicConnected ) {
-
-                        var msmnt = theStatus.windMeasurement
-                        if ( msmnt != null) {
-                            txtWindSpeed.setText("${msmnt.WindSpeed}")
-                            txtBoatDirection.setText("${msmnt.BoatDirection}")
-                            txtWindDirectoin.setText("${msmnt.WindDirection}")
-                            txtBattery.setText("${msmnt.BatteryPercentage}")
-
-                            val bra = RotateAnimation(
-                                - previousBoatDirection.toFloat(),
-                                - msmnt.BoatDirection.toFloat(),
-                                Animation.RELATIVE_TO_SELF,
-                                0.5f,
-                                Animation.RELATIVE_TO_SELF,
-                                0.5f
-                            )
-                            bra.setDuration(600);
-                            bra.setFillAfter(true);
-                            boatDirectionImage.startAnimation(bra);
-                            previousBoatDirection = msmnt.BoatDirection;
-
-                            val wra = RotateAnimation(
-                                previousWindDirection.toFloat(),
-                                msmnt.WindDirection.toFloat(),
-                                Animation.RELATIVE_TO_SELF,
-                                0.5f,
-                                Animation.RELATIVE_TO_SELF,
-                                0.5f
-                            )
-                            wra.setDuration(600);
-                            wra.setFillAfter(true);
-                            windDirectionImage.startAnimation(wra);
-                            previousWindDirection = msmnt.WindDirection;
-
+            if (screenBinding != null) {
+                observableDisposable += screenBinding!!.screenStatusChannel
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ theStatus ->
+                        when (theStatus) {
+                            DeviceStatusEnum.Disconnected -> {
+                            }
+                            DeviceStatusEnum.Connecting -> {
+                            }
+                            DeviceStatusEnum.Connected -> {
+                            }
                         }
-                    }
-                    else{
-                        txtWindSpeed.setText("---")
-                        txtBoatDirection.setText("---")
-                        txtWindDirectoin.setText("---")
-                        txtBattery.setText("---")
-                    }
-                })
+                    })
+                observableDisposable += screenBinding!!.ultrasonicStatusChannel
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ theStatus ->
+                        when (theStatus) {
+                            DeviceStatusEnum.Disconnected -> {
+                            }
+                            DeviceStatusEnum.Connecting -> {
+                            }
+                            DeviceStatusEnum.Connected -> {
+                            }
+                        }
+                    })
+            }
+
+//            if (theStatus.ultraSonicConnected ) {
+//
+//                var msmnt = theStatus.windMeasurement
+//                if ( msmnt != null) {
+//                    txtWindSpeed.setText("${msmnt.WindSpeed}")
+//                    txtBoatDirection.setText("${msmnt.BoatDirection}")
+//                    txtWindDirectoin.setText("${msmnt.WindDirection}")
+//                    txtBattery.setText("${msmnt.BatteryPercentage}")
+//
+//                    val bra = RotateAnimation(
+//                        - previousBoatDirection.toFloat(),
+//                        - msmnt.BoatDirection.toFloat(),
+//                        Animation.RELATIVE_TO_SELF,
+//                        0.5f,
+//                        Animation.RELATIVE_TO_SELF,
+//                        0.5f
+//                    )
+//                    bra.setDuration(600);
+//                    bra.setFillAfter(true);
+//                    boatDirectionImage.startAnimation(bra);
+//                    previousBoatDirection = msmnt.BoatDirection;
+//
+//                    val wra = RotateAnimation(
+//                        previousWindDirection.toFloat(),
+//                        msmnt.WindDirection.toFloat(),
+//                        Animation.RELATIVE_TO_SELF,
+//                        0.5f,
+//                        Animation.RELATIVE_TO_SELF,
+//                        0.5f
+//                    )
+//                    wra.setDuration(600);
+//                    wra.setFillAfter(true);
+//                    windDirectionImage.startAnimation(wra);
+//                    previousWindDirection = msmnt.WindDirection;
+//
+//                }
+//            }
+//            else{
+//                txtWindSpeed.setText("---")
+//                txtBoatDirection.setText("---")
+//                txtWindDirectoin.setText("---")
+//                txtBattery.setText("---")
+//            }
 
         }
 
@@ -275,6 +287,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
 
         override fun onServiceDisconnected(name: ComponentName?) {
             screenBinding = null
+            observableDisposable.clear()
         }
     }
 }

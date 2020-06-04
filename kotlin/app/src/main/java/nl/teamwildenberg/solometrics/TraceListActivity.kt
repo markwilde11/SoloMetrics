@@ -109,17 +109,12 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type = "application/json"
                     var title = selectedTraceItem
-
                     var dateString = selectedTraceItem?.Trace?.epoch?.toDateString()
                     putExtra(Intent.EXTRA_TITLE, "Track_${dateString}.json")
-
-                    // Optionally, specify a URI for the directory that should be opened in
-                    // the system file picker before your app creates the document.
                     putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri)
                 }
 
                 var activityResult: ActivityResult?
-
                 launch {
 
                     activityResult = launchIntent(intent).await()
@@ -146,7 +141,6 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
 
                         }
                     }
-                //    startActivityForResult(intent, 4)
                 }
             }
         }
