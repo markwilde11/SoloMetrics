@@ -58,6 +58,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
                     callScreenDuinoService(screenBinding!!.ultraSonicDevice, thisActivity)
                 }
             }
+            collapseFABMenu()
         }
         ScreenDuinoButton.setOnClickListener { view ->
             launch {
@@ -68,6 +69,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
                     callScreenDuinoService(screenBinding!!.screenDuinoDevice, thisActivity)
                 }
             }
+            collapseFABMenu()
         }
 //        StorageButton.setOnClickListener { view ->
 //            var storageServiceIntent = Intent(this, StorageService::class.java)
@@ -85,6 +87,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
             launch{
                 openTraceListActivity(thisActivity)
             }
+            collapseFABMenu()
         }
 
         var fabList: MutableList<LinearLayout> = mutableListOf()

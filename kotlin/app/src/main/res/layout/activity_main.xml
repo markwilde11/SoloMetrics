@@ -156,7 +156,6 @@
         android:layout_height="match_parent"
         android:background="@color/colorTransBg"
         android:visibility="gone" />
-
     <LinearLayout
         android:id="@+id/fabLayout1"
         android:layout_width="wrap_content"
@@ -172,15 +171,15 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ultrasonic Disco" />
+            android:text="Connect Ultrasonic" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/ScreenDuinoButton"
+            android:id="@+id/UltrasonicButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             app:fabSize="mini"
-            app:srcCompat="@drawable/ic_nature_black_24dp"/>
+            app:srcCompat="@drawable/ic_nature_black_24dp" />
     </LinearLayout>
     <LinearLayout
         android:id="@+id/fabLayout2"
@@ -197,17 +196,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Screen Disco" />
+            android:text="Connect Screen" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/UltrasonicButton"
+            android:id="@+id/ScreenDuinoButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             app:fabSize="mini"
-            app:srcCompat="@drawable/ic_web_black_24dp" />
+            app:srcCompat="@drawable/ic_web_black_24dp"/>
     </LinearLayout>
-
     <LinearLayout
         android:id="@+id/fabLayout3"
         android:layout_width="wrap_content"
