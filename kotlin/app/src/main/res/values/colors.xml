@@ -5,4 +5,7 @@
     <color name="colorAccent">#D81B60</color>
     <color name="colorTransBg">#26000000</color>
     <color name="disabled">#CCCCCC</color>
+    <color name="statusDisconnected">#CCCCCC</color>
+    <color name="statusConnecting">#006600</color>
+    <color name="statusConnected">#00FF00</color>
 </resources>

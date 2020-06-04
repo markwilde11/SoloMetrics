@@ -6,15 +6,20 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
+import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -30,6 +35,7 @@ import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
 import nl.teamwildenberg.solometrics.Service.DeviceStatusEnum
 import nl.teamwildenberg.solometrics.Service.ScreenDuinoService
 import nl.teamwildenberg.solometrics.Service.StorageService
+import nl.teamwildenberg.solometrics.Service.WindMeasurement
 import kotlin.coroutines.CoroutineContext
 
 
@@ -190,17 +196,10 @@ class MainActivity : ActivityBase(),CoroutineScope {
 
     private val screenDuinoServiceConnection = object : ServiceConnection {
         private var observableDisposable: CompositeDisposable = CompositeDisposable()
+        var previousBoatDirection : Int = 0;
+        var previousWindDirection : Int =0;
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            var txtScreen = findViewById<TextView>(R.id.ScreenTextView)
-            var txtWindSpeed = findViewById<TextView>(R.id.WindSpeedTextView)
-            var txtBoatDirection = findViewById<TextView>(R.id.BoatDirectionTextView)
-            var txtWindDirectoin = findViewById<TextView>(R.id.WindDirectionTextView)
-            var txtBattery = findViewById<TextView>(R.id.UltrasonicBatteryTextView)
-            var previousBoatDirection : Int = 0;
-            var previousWindDirection : Int =0;
-
-
             screenBinding = service as ScreenDuinoService.LocalBinder
             if (screenBinding != null) {
                 observableDisposable += screenBinding!!.screenStatusChannel
@@ -208,10 +207,13 @@ class MainActivity : ActivityBase(),CoroutineScope {
                     .subscribe({ theStatus ->
                         when (theStatus) {
                             DeviceStatusEnum.Disconnected -> {
+                                screenStatus.setColorFilter(R.color.statusDisconnected)
                             }
                             DeviceStatusEnum.Connecting -> {
+                                screenStatus.setColorFilter(R.color.statusConnecting)
                             }
                             DeviceStatusEnum.Connected -> {
+                                screenStatus.setColorFilter(R.color.statusConnected)
                             }
                         }
                     })
@@ -220,58 +222,84 @@ class MainActivity : ActivityBase(),CoroutineScope {
                     .subscribe({ theStatus ->
                         when (theStatus) {
                             DeviceStatusEnum.Disconnected -> {
+                                ultrasonicStatus.setStatusColor(R.drawable.ic_nature_black_24dp, R.color.statusDisconnected)
+                                updateCompass(null)
                             }
                             DeviceStatusEnum.Connecting -> {
+                                ultrasonicStatus.setStatusColor(R.drawable.ic_nature_black_24dp, R.color.statusConnecting)
                             }
                             DeviceStatusEnum.Connected -> {
+                                ultrasonicStatus.setStatusColor(R.drawable.ic_nature_black_24dp, R.color.statusConnected)
+                                screenBinding!!.windMeasurementChannel
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe{ windMeasurement ->
+                                        updateCompass(windMeasurement)
+                                    }
                             }
                         }
                     })
             }
 
-//            if (theStatus.ultraSonicConnected ) {
-//
-//                var msmnt = theStatus.windMeasurement
-//                if ( msmnt != null) {
-//                    txtWindSpeed.setText("${msmnt.WindSpeed}")
-//                    txtBoatDirection.setText("${msmnt.BoatDirection}")
-//                    txtWindDirectoin.setText("${msmnt.WindDirection}")
-//                    txtBattery.setText("${msmnt.BatteryPercentage}")
-//
-//                    val bra = RotateAnimation(
-//                        - previousBoatDirection.toFloat(),
-//                        - msmnt.BoatDirection.toFloat(),
-//                        Animation.RELATIVE_TO_SELF,
-//                        0.5f,
-//                        Animation.RELATIVE_TO_SELF,
-//                        0.5f
-//                    )
-//                    bra.setDuration(600);
-//                    bra.setFillAfter(true);
-//                    boatDirectionImage.startAnimation(bra);
-//                    previousBoatDirection = msmnt.BoatDirection;
-//
-//                    val wra = RotateAnimation(
-//                        previousWindDirection.toFloat(),
-//                        msmnt.WindDirection.toFloat(),
-//                        Animation.RELATIVE_TO_SELF,
-//                        0.5f,
-//                        Animation.RELATIVE_TO_SELF,
-//                        0.5f
-//                    )
-//                    wra.setDuration(600);
-//                    wra.setFillAfter(true);
-//                    windDirectionImage.startAnimation(wra);
-//                    previousWindDirection = msmnt.WindDirection;
-//
-//                }
+
+        }
+
+        private fun ImageView.setStatusColor( drawable: Int, color: Int) {
+//            var d: Drawable? =
+//                VectorDrawableCompat.create(resources, drawable, null)
+//            if (d != null) {
+//                d = DrawableCompat.wrap(d)
+//                DrawableCompat.setTint(d, color)
+//                this.setImageDrawable(d)
 //            }
-//            else{
-//                txtWindSpeed.setText("---")
-//                txtBoatDirection.setText("---")
-//                txtWindDirectoin.setText("---")
-//                txtBattery.setText("---")
-//            }
+            this.setColorFilter(ContextCompat.getColor(context, color), android.graphics.PorterDuff.Mode.SRC_IN)
+        }
+
+        private fun updateCompass(windMeasurement: WindMeasurement?){
+
+            var txtWindSpeed = findViewById<TextView>(R.id.WindSpeedTextView)
+            var txtBoatDirection = findViewById<TextView>(R.id.BoatDirectionTextView)
+            var txtWindDirectoin = findViewById<TextView>(R.id.WindDirectionTextView)
+            var txtBattery = findViewById<TextView>(R.id.UltrasonicBatteryTextView)
+
+            if (windMeasurement != null) {
+                txtWindSpeed.setText("${windMeasurement.WindSpeed}")
+                txtBoatDirection.setText("${windMeasurement.BoatDirection}")
+                txtWindDirectoin.setText("${windMeasurement.WindDirection}")
+                txtBattery.setText("${windMeasurement.BatteryPercentage}")
+
+                val bra = RotateAnimation(
+                    -previousBoatDirection.toFloat(),
+                    -windMeasurement.BoatDirection.toFloat(),
+                    Animation.RELATIVE_TO_SELF,
+                    0.5f,
+                    Animation.RELATIVE_TO_SELF,
+                    0.5f
+                )
+                bra.setDuration(600);
+                bra.setFillAfter(true);
+                boatDirectionImage.startAnimation(bra);
+                previousBoatDirection = windMeasurement.BoatDirection;
+
+                val wra = RotateAnimation(
+                    previousWindDirection.toFloat(),
+                    windMeasurement.WindDirection.toFloat(),
+                    Animation.RELATIVE_TO_SELF,
+                    0.5f,
+                    Animation.RELATIVE_TO_SELF,
+                    0.5f
+                )
+                wra.setDuration(600);
+                wra.setFillAfter(true);
+                windDirectionImage.startAnimation(wra);
+                previousWindDirection = windMeasurement.WindDirection;
+            }
+            else{
+                txtWindSpeed.setText("---")
+                txtBoatDirection.setText("---")
+                txtWindDirectoin.setText("---")
+                txtBattery.setText("---")
+
+            }
 
         }
 

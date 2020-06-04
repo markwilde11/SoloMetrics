@@ -84,19 +84,21 @@ class ScreenDuinoService: Service() {
             // hydrate UltraSonic bluetooth device
             Log.d("ScreenDuinoService", "starting command - Hydrate device")
             val deviceType = intent.getSerializableExtra("deviceType") as DeviceTypeEnum
-            val ultraDevice = intent.getParcelableExtra("blueDevice") as BlueDevice
+            val blueDevice = intent.getParcelableExtra("blueDevice") as BlueDevice?
 
             // hydrate ScreenDuino bluetooth device
 
             when (deviceType) {
-                DeviceTypeEnum.SoloScreenDuino ->{
+                DeviceTypeEnum.Ultrasonic ->{
                     Log.d("ScreenDuinoService", "starting command - Connect to ultrasonic")
                     // connect to UltraSonic
-                    connectToUltrasonic(ultraDevice, ultrasonicDisposable)
+                    ultraSonicDevice = blueDevice
+                    connectToUltrasonic(blueDevice, ultrasonicDisposable)
                 }
                 DeviceTypeEnum.SoloScreenDuino -> {
                     Log.d("ScreenDuinoService", "starting command - Connect to screen")
-                    connectToScreen(ultraDevice, screenDisposable)
+                    screenDuinoDevice = blueDevice
+                    connectToScreen(blueDevice, screenDisposable)
                 }
             }
         }
@@ -124,8 +126,8 @@ class ScreenDuinoService: Service() {
         return localBinder
     }
 
-    private fun connectToScreen(theBlueDevice: BlueDevice, theDisposable: CompositeDisposable){
-        if (theDisposable.size() == 0) {
+    private fun connectToScreen(theBlueDevice: BlueDevice?, theDisposable: CompositeDisposable){
+        if (theDisposable.size() == 0 && theBlueDevice != null) {
             localBinder.screenStatusChannel.onNext(DeviceStatusEnum.Connecting)
             theDisposable.clear()
             GlobalScope.launch {
@@ -165,10 +167,10 @@ class ScreenDuinoService: Service() {
         }
     }
 
-    private fun connectToUltrasonic(theBlueDevice: BlueDevice, theDisposable: CompositeDisposable) {
+    private fun connectToUltrasonic(theBlueDevice: BlueDevice?, theDisposable: CompositeDisposable) {
 
-        if (theDisposable.size() == 0) {
-            localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Disconnected)
+        if (theDisposable.size() == 0 && theBlueDevice != null) {
+            localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Connecting)
             GlobalScope.launch {
                 val bls = BleService(this@ScreenDuinoService)
                 val obs = bls.Connect(theBlueDevice)
@@ -211,7 +213,7 @@ class ScreenDuinoService: Service() {
                                 screenDuinoDevice!!,
                                 screenValueArray)
                         }
-                       // localBinder.setValue("windMeasurement", msmnt)
+                        localBinder.windMeasurementChannel.onNext(msmnt)
                         ultrasonicInstanceCounter++
                     })
             }
@@ -286,6 +288,7 @@ class ScreenDuinoService: Service() {
     inner class LocalBinder(
         val screenStatusChannel: Subject<DeviceStatusEnum> = PublishSubject.create<DeviceStatusEnum>(),
         val ultrasonicStatusChannel: Subject<DeviceStatusEnum> = PublishSubject.create<DeviceStatusEnum>(),
+        val windMeasurementChannel: Subject<WindMeasurement> = PublishSubject.create<WindMeasurement>(),
         var screenStatus: DeviceStatusEnum = DeviceStatusEnum.Disconnected,
         var ultrasonicStatus: DeviceStatusEnum = DeviceStatusEnum.Disconnected
     ): Binder(){
