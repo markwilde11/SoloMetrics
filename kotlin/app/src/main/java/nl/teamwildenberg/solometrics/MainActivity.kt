@@ -111,7 +111,6 @@ class MainActivity : ActivityBase(),CoroutineScope {
     }
 
     private suspend fun openTraceListActivity(thisActivity: Activity) {
-        startActivityForResult(intent, 3)
         val changePageIntent = Intent(thisActivity, TraceListActivity::class.java)
         var activityResult: ActivityResult?
 
@@ -128,7 +127,6 @@ class MainActivity : ActivityBase(),CoroutineScope {
         var permissionResult = this.requestPermissionss(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, activityRequestCode =  1)
 
         if (permissionResult) {
-            startActivityForResult(intent, 2)
             val changePageIntent = Intent(thisActivity, DeviceListActivity::class.java)
             changePageIntent.putExtra("deviceType", deviceType)
             var activityResult: ActivityResult?

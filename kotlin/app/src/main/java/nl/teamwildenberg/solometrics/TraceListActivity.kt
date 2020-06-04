@@ -5,20 +5,18 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.DocumentsContract
 import android.util.DisplayMetrics
 import android.view.MenuItem
-import android.widget.AdapterView
-import android.widget.ExpandableListView
 import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.gson.Gson
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_main.fab
 import kotlinx.android.synthetic.main.activity_main.fabLayout1
 import kotlinx.android.synthetic.main.activity_main.fabLayout2
@@ -26,14 +24,18 @@ import kotlinx.android.synthetic.main.activity_main.fabLayout3
 import kotlinx.android.synthetic.main.trace_list_activity.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import nl.teamwildenberg.solometrics.Adapter.PaperTraceItem
 import nl.teamwildenberg.solometrics.Adapter.TraceListAdapter
-import nl.teamwildenberg.solometrics.Ble.BlueDevice
 import nl.teamwildenberg.solometrics.Extensions.setEnabledState
+import nl.teamwildenberg.solometrics.Extensions.toDateString
 import nl.teamwildenberg.solometrics.Service.PaperTrace
 import nl.teamwildenberg.solometrics.Service.StorageService
 import nl.teamwildenberg.solometrics.Service.StorageStatusEnum
-import nl.teamwildenberg.solometrics.Service.WindMeasurement
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.ObjectOutputStream
 
 
 class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
@@ -99,7 +101,54 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
         }
 
         SaveTraceListButton.setOnClickListener {
-            // TODO: Export to csv
+            var service  = storageBinding?.getService()
+            if ((selectedTraceItem != null) && (service != null)){
+                // Request code for creating a PDF document.
+                var pickerInitialUri: Uri? = null
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/json"
+                    var title = selectedTraceItem
+
+                    var dateString = selectedTraceItem?.Trace?.epoch?.toDateString()
+                    putExtra(Intent.EXTRA_TITLE, "Track_${dateString}.json")
+
+                    // Optionally, specify a URI for the directory that should be opened in
+                    // the system file picker before your app creates the document.
+                    putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri)
+                }
+
+                var activityResult: ActivityResult?
+
+                launch {
+
+                    activityResult = launchIntent(intent).await()
+                    if (activityResult?.resultCode == RESULT_OK) {
+                        activityResult?.data?.data?.also {uri ->
+                            // Perform operations on the document using its URI.
+                            var listToSerialize = service.GetWindMeasurementList(selectedTraceItem!!.Trace)
+                            var fileOutputString = Gson().toJson(listToSerialize)
+                            val contentResolver = applicationContext.contentResolver
+
+                            try {
+                                contentResolver.openFileDescriptor(uri, "w")?.use {
+                                    FileOutputStream(it.fileDescriptor).use {
+                                        it.write(
+                                            (fileOutputString).toByteArray()
+                                        )
+                                    }
+                                }
+                            } catch (e: FileNotFoundException) {
+                                e.printStackTrace()
+                            } catch (e: IOException) {
+                                e.printStackTrace()
+                            }
+
+                        }
+                    }
+                //    startActivityForResult(intent, 4)
+                }
+            }
         }
 
         StartTraceListButton.setOnClickListener{
