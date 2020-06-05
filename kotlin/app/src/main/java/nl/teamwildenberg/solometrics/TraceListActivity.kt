@@ -58,15 +58,18 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
             var service = storageBinding?.getService()
             selectedTraceItem = traceListView.getItemAtPosition(groupPosition) as PaperTraceItem
 
-            DeleteTraceListButton.setEnabledState(true)
-            SaveTraceListButton.setEnabledState(true)
+            if (selectedTraceItem != null) {
+                DeleteTraceListButton.setEnabledState(true)
+                SaveTraceListButton.setEnabledState(true)
 
-            if (service != null){
-                if (selectedTraceItem!!.PartionList == null) {
-                    var partionList = service.GetPartionList(selectedTraceItem!!.Trace)
-                    selectedTraceItem!!.PartionList = partionList
-                    traceAdapter.notifyDataSetChanged()
-                }}
+                if (service != null) {
+                    if (selectedTraceItem!!.PartionList == null) {
+                        var partionList = service.GetPartionList(selectedTraceItem!!.Trace)
+                        selectedTraceItem!!.PartionList = partionList
+                        traceAdapter.notifyDataSetChanged()
+                    }
+                }
+            }
         }
 
         DeleteTraceListButton.setEnabledState(false)

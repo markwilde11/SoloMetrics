@@ -325,13 +325,6 @@ class MainActivity : ActivityBase(),CoroutineScope {
     }
 
     private fun ImageView.setStatusColor( drawable: Int, color: Int) {
-//            var d: Drawable? =
-//                VectorDrawableCompat.create(resources, drawable, null)
-//            if (d != null) {
-//                d = DrawableCompat.wrap(d)
-//                DrawableCompat.setTint(d, color)
-//                this.setImageDrawable(d)
-//            }
         this.setColorFilter(ContextCompat.getColor(context, color), android.graphics.PorterDuff.Mode.SRC_IN)
     }
 }

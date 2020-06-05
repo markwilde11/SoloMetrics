@@ -94,18 +94,20 @@ class StorageService: Service() {
 
     public fun bindMeasurementObserver(obs: Observable<WindMeasurement>){
         var counter = 0
-        obs
-            .take(1)
-            .subscribe{msmntList ->
-                myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connected)
-            }
 
-        measurementDisposable += obs
-            .map{msmnt:WindMeasurement -> msmnt.toPaper( ++counter)}
-            .buffer(60)
-            .subscribe { msmntList ->
-                activeTrace?.let { AddMeasurements(it, msmntList) }
-            }
+            obs
+                .filter{activeTrace != null}
+                .take(1)
+                .subscribe { msmntList ->
+                    myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connected)
+                }
+
+            measurementDisposable += obs
+                .map { msmnt: WindMeasurement -> msmnt.toPaper(++counter) }
+                .buffer(60)
+                .subscribe { msmntList ->
+                    activeTrace?.let { AddMeasurements(it, msmntList) }
+                }
     }
 
     public fun unbindMeasurementObserver(){
