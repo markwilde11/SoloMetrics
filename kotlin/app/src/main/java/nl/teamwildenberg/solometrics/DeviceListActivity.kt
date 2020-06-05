@@ -25,6 +25,7 @@ import nl.teamwildenberg.solometrics.Adapter.DeviceListAdapter
 import nl.teamwildenberg.solometrics.Ble.BleService
 import nl.teamwildenberg.solometrics.Ble.BlueDevice
 import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.Ble.IBleService
 import java.util.concurrent.TimeUnit
 
 
@@ -33,6 +34,7 @@ class DeviceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private lateinit var deviceDiscoveryAdapter: DeviceListAdapter
     private var deviceList: MutableList<BlueDevice> = mutableListOf()
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val bls: IBleService = BleService()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,7 +125,6 @@ class DeviceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 .filter { t -> t >= 999 }
 
             launch {
-                val bls = BleService()
                 val obs = bls.GetDeviceList(deviceType, timerGuardObservable)
                 compositeDisposable += obs
                     //.observeOn(AndroidSchedulers.mainThread())

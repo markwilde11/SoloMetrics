@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import nl.teamwildenberg.solometrics.Ble.BleService
 import nl.teamwildenberg.solometrics.Ble.BlueDevice
 import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.Ble.IBleService
 import nl.teamwildenberg.solometrics.MainActivity
 import nl.teamwildenberg.solometrics.R
 import java.util.concurrent.TimeUnit
@@ -30,6 +31,8 @@ import kotlin.math.roundToInt
 
 class ScreenDuinoService: Service() {
     val CHANNEL_ID: String = "ScreenDuinoServiceChannel"
+    private val bls: IBleService = BleService()
+
     private val screenDisposable: CompositeDisposable = CompositeDisposable()
     private val ultrasonicDisposable: CompositeDisposable = CompositeDisposable()
     private val userSettingsDisposable: CompositeDisposable = CompositeDisposable()
@@ -131,8 +134,6 @@ class ScreenDuinoService: Service() {
             localBinder.screenStatusChannel.onNext(DeviceStatusEnum.Connecting)
             theDisposable.clear()
             GlobalScope.launch {
-                val bls = BleService()
-
                 val obs = bls.Connect(theBlueDevice)
                 obs.take(1).subscribe({char ->
                     localBinder.screenStatusChannel.onNext(DeviceStatusEnum.Connected)
@@ -172,7 +173,6 @@ class ScreenDuinoService: Service() {
         if (theDisposable.size() == 0 && theBlueDevice != null) {
             localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Connecting)
             GlobalScope.launch {
-                val bls = BleService()
                 val obs = bls.Connect(theBlueDevice)
 
                 // shortlived subscriber to set the user settings
