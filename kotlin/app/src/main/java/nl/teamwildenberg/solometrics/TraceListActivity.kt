@@ -29,6 +29,7 @@ import nl.teamwildenberg.solometrics.Adapter.PaperTraceItem
 import nl.teamwildenberg.solometrics.Adapter.TraceListAdapter
 import nl.teamwildenberg.solometrics.Extensions.setEnabledState
 import nl.teamwildenberg.solometrics.Extensions.toDateString
+import nl.teamwildenberg.solometrics.Service.DeviceStatusEnum
 import nl.teamwildenberg.solometrics.Service.PaperTrace
 import nl.teamwildenberg.solometrics.Service.StorageService
 import nl.teamwildenberg.solometrics.Service.StorageStatusEnum
@@ -224,8 +225,7 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
         var disp: Disposable? = null
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
-            var storageService = storageBinding!!.getService()
-            disp = storageService.storageStatusChannel
+            disp = storageBinding?.storageActionChannel
                 ?.observeOn(AndroidSchedulers.mainThread())
                 ?.subscribe { theStatus ->
                     when(theStatus.state){
@@ -234,11 +234,12 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
                             traceList.remove(item)
                             traceAdapter.notifyDataSetChanged()
                         }
-                        StorageStatusEnum.StartNew -> {
-                            traceList.add(PaperTraceItem(theStatus.trace, null))
-                            traceAdapter.notifyDataSetChanged()
+                        StorageStatusEnum.Add -> {
+                            if (theStatus.trace != null) {
+                                traceList.add(PaperTraceItem(theStatus.trace!!, null))
+                                traceAdapter.notifyDataSetChanged()
+                            }
                         }
-
                     }
                 }
                 loadTraceList()

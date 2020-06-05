@@ -158,6 +158,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
             val startServiceIntent = Intent(thisActivity, ScreenDuinoService::class.java)
             startServiceIntent.putExtra("deviceType", deviceType)
             startServiceIntent.putExtra("blueDevice", theDevice)
+            
             ContextCompat.startForegroundService(thisActivity, startServiceIntent)
         }
         else{
@@ -185,8 +186,18 @@ class MainActivity : ActivityBase(),CoroutineScope {
     }
 
     private val storageServiceConnection = object: ServiceConnection{
+        private var observableDisposable: CompositeDisposable = CompositeDisposable()
+
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
+            setStatusColor(storageStatus, R.drawable.ic_sd_storage_black_24dp, storageBinding!!.storageStatus)
+            if (storageBinding !=null){
+                observableDisposable += storageBinding!!.storageStatusChannel
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe{ theStatus ->
+                        setStatusColor(storageStatus, R.drawable.ic_sd_storage_black_24dp, theStatus)
+                    }
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -202,34 +213,23 @@ class MainActivity : ActivityBase(),CoroutineScope {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             screenBinding = service as ScreenDuinoService.LocalBinder
             if (screenBinding != null) {
+                setStatusColor(screenStatus, R.drawable.ic_web_black_24dp, screenBinding!!.screenStatus)
                 observableDisposable += screenBinding!!.screenStatusChannel
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ theStatus ->
-                        when (theStatus) {
-                            DeviceStatusEnum.Disconnected -> {
-                                screenStatus.setColorFilter(R.color.statusDisconnected)
-                            }
-                            DeviceStatusEnum.Connecting -> {
-                                screenStatus.setColorFilter(R.color.statusConnecting)
-                            }
-                            DeviceStatusEnum.Connected -> {
-                                screenStatus.setColorFilter(R.color.statusConnected)
-                            }
-                        }
+                        setStatusColor(screenStatus, R.drawable.ic_web_black_24dp, theStatus)
                     })
+
+                setStatusColor(ultrasonicStatus, R.drawable.ic_nature_black_24dp, screenBinding!!.ultrasonicStatus)
                 observableDisposable += screenBinding!!.ultrasonicStatusChannel
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ theStatus ->
+                        setStatusColor(ultrasonicStatus, R.drawable.ic_nature_black_24dp, theStatus)
                         when (theStatus) {
                             DeviceStatusEnum.Disconnected -> {
-                                ultrasonicStatus.setStatusColor(R.drawable.ic_nature_black_24dp, R.color.statusDisconnected)
                                 updateCompass(null)
                             }
-                            DeviceStatusEnum.Connecting -> {
-                                ultrasonicStatus.setStatusColor(R.drawable.ic_nature_black_24dp, R.color.statusConnecting)
-                            }
                             DeviceStatusEnum.Connected -> {
-                                ultrasonicStatus.setStatusColor(R.drawable.ic_nature_black_24dp, R.color.statusConnected)
                                 screenBinding!!.windMeasurementChannel
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe{ windMeasurement ->
@@ -243,16 +243,6 @@ class MainActivity : ActivityBase(),CoroutineScope {
 
         }
 
-        private fun ImageView.setStatusColor( drawable: Int, color: Int) {
-//            var d: Drawable? =
-//                VectorDrawableCompat.create(resources, drawable, null)
-//            if (d != null) {
-//                d = DrawableCompat.wrap(d)
-//                DrawableCompat.setTint(d, color)
-//                this.setImageDrawable(d)
-//            }
-            this.setColorFilter(ContextCompat.getColor(context, color), android.graphics.PorterDuff.Mode.SRC_IN)
-        }
 
         private fun updateCompass(windMeasurement: WindMeasurement?){
 
@@ -317,5 +307,31 @@ class MainActivity : ActivityBase(),CoroutineScope {
             screenBinding = null
             observableDisposable.clear()
         }
+    }
+
+
+    private fun setStatusColor(img: ImageView, drawable: Int, status: DeviceStatusEnum){
+        when (status) {
+            DeviceStatusEnum.Disconnected -> {
+                img.setStatusColor(drawable, R.color.statusDisconnected)
+            }
+            DeviceStatusEnum.Connecting -> {
+                img.setStatusColor(drawable, R.color.statusConnecting)
+            }
+            DeviceStatusEnum.Connected -> {
+                img.setStatusColor(drawable, R.color.statusConnected)
+            }
+        }
+    }
+
+    private fun ImageView.setStatusColor( drawable: Int, color: Int) {
+//            var d: Drawable? =
+//                VectorDrawableCompat.create(resources, drawable, null)
+//            if (d != null) {
+//                d = DrawableCompat.wrap(d)
+//                DrawableCompat.setTint(d, color)
+//                this.setImageDrawable(d)
+//            }
+        this.setColorFilter(ContextCompat.getColor(context, color), android.graphics.PorterDuff.Mode.SRC_IN)
     }
 }

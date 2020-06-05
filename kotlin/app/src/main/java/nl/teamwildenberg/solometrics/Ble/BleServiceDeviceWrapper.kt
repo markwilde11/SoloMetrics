@@ -173,7 +173,7 @@ class BleServiceDeviceWrapper (){
                         }
                     }
                 }
-            deviceGatt = theBlueDevice.device.connectGatt(context, false, bleConnectCallback )
+            deviceGatt = theBlueDevice.device!!.connectGatt(context, false, bleConnectCallback )
         }
 
         return obs.doFinally {

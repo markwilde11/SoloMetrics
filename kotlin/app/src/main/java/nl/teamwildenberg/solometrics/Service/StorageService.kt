@@ -18,7 +18,6 @@ import java.time.Instant
 
 class StorageService: Service() {
     private val myBinder = LocalBinder()
-    public val storageStatusChannel: Subject<StorageStatus> = PublishSubject.create<StorageStatus>()
     public var activeTrace: PaperTrace? = null;
     private val measurementDisposable: CompositeDisposable = CompositeDisposable()
 
@@ -54,7 +53,15 @@ class StorageService: Service() {
 
 
     inner class LocalBinder(
+        public val storageActionChannel: Subject<StorageStatus> = PublishSubject.create<StorageStatus>(),
+        public val storageStatusChannel: Subject<DeviceStatusEnum> = PublishSubject.create<DeviceStatusEnum>(),
+        public var storageStatus: DeviceStatusEnum = DeviceStatusEnum.Disconnected
     ): Binder(){
+        init{
+            storageStatusChannel.subscribe{
+                storageStatus = it
+            }
+        }
         fun getService(): StorageService{
             return this@StorageService
         }
@@ -63,6 +70,7 @@ class StorageService: Service() {
     private fun StartNewTrace() {
         if (activeTrace == null) {
             var traceKeys = Paper.book().allKeys
+            traceKeys.sort()
             var newKey = 0
             if (traceKeys.size > 0) {
                 var lastKey = traceKeys.last()
@@ -71,13 +79,14 @@ class StorageService: Service() {
             }
             activeTrace = PaperTrace(++newKey, Instant.now().epochSecond)
             Paper.book().write(newKey.toStringKey(), activeTrace)
-            storageStatusChannel.onNext(StorageStatus(StorageStatusEnum.StartNew, activeTrace!!))
+            myBinder.storageActionChannel.onNext(StorageStatus(StorageStatusEnum.Add, activeTrace!!))
+            myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connecting)
         }
     }
 
     public fun StopTrace(){
         if (activeTrace != null){
-            storageStatusChannel.onNext(StorageStatus(StorageStatusEnum.Stopped, activeTrace!!))
+            myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Disconnected)
             activeTrace = null
         }
 
@@ -85,11 +94,16 @@ class StorageService: Service() {
 
     public fun bindMeasurementObserver(obs: Observable<WindMeasurement>){
         var counter = 0
+        obs
+            .take(1)
+            .subscribe{msmntList ->
+                myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connected)
+            }
+
         measurementDisposable += obs
             .map{msmnt:WindMeasurement -> msmnt.toPaper( ++counter)}
             .buffer(60)
             .subscribe { msmntList ->
-
                 activeTrace?.let { AddMeasurements(it, msmntList) }
             }
     }
@@ -105,8 +119,8 @@ class StorageService: Service() {
         val traceKey = targetTrace.key.toStringKey()
         var partitionKeyList = Paper.book(traceKey).allKeys
         if (partitionKeyList.size > 0) {
+            partitionKeyList.sortBy{it}
             var lastPartitionKey = partitionKeyList.last()
-
             partitionKey = lastPartitionKey.toInt() + 1
         }
 
@@ -117,6 +131,7 @@ class StorageService: Service() {
     public fun GetTraceList() : List<PaperTrace>{
         var traceList: MutableList<PaperTrace> = mutableListOf()
         var traceListKeys = Paper.book().allKeys
+        traceListKeys.sortBy{it}
         traceListKeys.forEach {
             var nextTrace = Paper.book().read<PaperTrace>(it)
             traceList.add(nextTrace)
@@ -128,6 +143,7 @@ class StorageService: Service() {
         var partitionList: MutableList<List<WindMeasurement>> = mutableListOf()
         checkTrace(trace)
         var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
+        partitionKeys.sort()
         partitionKeys.forEach {
             var partition = Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
             partitionList.add(partition)
@@ -140,6 +156,7 @@ class StorageService: Service() {
         var windMeasurementList: MutableList<WindMeasurement> = mutableListOf()
         checkTrace(trace)
         var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
+        partitionKeys.sort()
         partitionKeys.forEach {
             var partition = Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
             windMeasurementList.addAll(partition)
@@ -156,7 +173,7 @@ class StorageService: Service() {
         else {
             Paper.book(stringKey).destroy()
             Paper.book().delete(stringKey)
-            storageStatusChannel.onNext(StorageStatus(StorageStatusEnum.Delete, trace))
+            myBinder.storageActionChannel.onNext(StorageStatus(StorageStatusEnum.Delete, trace))
             return DeleteTraceResult.Success
         }
     }

@@ -22,10 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import nl.teamwildenberg.solometrics.Adapter.DeviceListAdapter
-import nl.teamwildenberg.solometrics.Ble.BleService
-import nl.teamwildenberg.solometrics.Ble.BlueDevice
-import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
-import nl.teamwildenberg.solometrics.Ble.IBleService
+import nl.teamwildenberg.solometrics.Ble.*
 import java.util.concurrent.TimeUnit
 
 
@@ -34,7 +31,7 @@ class DeviceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private lateinit var deviceDiscoveryAdapter: DeviceListAdapter
     private var deviceList: MutableList<BlueDevice> = mutableListOf()
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
-    private val bls: IBleService = BleService()
+    private val bls: IBleService = BleServiceDummy()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

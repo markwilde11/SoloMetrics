@@ -18,10 +18,7 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import nl.teamwildenberg.solometrics.Ble.BleService
-import nl.teamwildenberg.solometrics.Ble.BlueDevice
-import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
-import nl.teamwildenberg.solometrics.Ble.IBleService
+import nl.teamwildenberg.solometrics.Ble.*
 import nl.teamwildenberg.solometrics.MainActivity
 import nl.teamwildenberg.solometrics.R
 import java.util.concurrent.TimeUnit
@@ -31,7 +28,7 @@ import kotlin.math.roundToInt
 
 class ScreenDuinoService: Service() {
     val CHANNEL_ID: String = "ScreenDuinoServiceChannel"
-    private val bls: IBleService = BleService()
+    private val bls: IBleService = BleServiceDummy()
 
     private val screenDisposable: CompositeDisposable = CompositeDisposable()
     private val ultrasonicDisposable: CompositeDisposable = CompositeDisposable()
@@ -173,7 +170,16 @@ class ScreenDuinoService: Service() {
         if (theDisposable.size() == 0 && theBlueDevice != null) {
             localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Connecting)
             GlobalScope.launch {
-                val obs = bls.Connect(theBlueDevice)
+                val obs = bls
+                    .Connect(theBlueDevice)
+                    .map{char ->
+                        Log.d("Mainactivity", "connectToDevice - connected: ${char.value}")
+                        // KUDO's (int is 4 bits) there
+                        // https://stackoverflow.com/a/49986095/553589
+                        var msmnt = parseWindMeasurements(char.value);
+                        Log.d("Mainactivity", "speed: ${msmnt.WindSpeed} windDir ${msmnt.WindDirection}, boatDir ${msmnt.BoatDirection}, Battery ${msmnt.BatteryPercentage}")
+                        msmnt
+                    }
 
                 // shortlived subscriber to set the user settings
                 userSettingsDisposable += obs.take(1).subscribe({char ->
@@ -181,6 +187,7 @@ class ScreenDuinoService: Service() {
                     localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Connected)
                 })
 
+                // Screen
                 theDisposable += obs
                     .sample(1, TimeUnit.SECONDS)
                     .doOnDispose({
@@ -192,31 +199,28 @@ class ScreenDuinoService: Service() {
                                     screenValueArray)
                         }
                     })
-                    .subscribe({ char ->
-                        Log.d("Mainactivity", "connectToDevice - connected: ${char.value}")
-                        // KUDO's (int is 4 bits) there
-                        // https://stackoverflow.com/a/49986095/553589
-
-                        var msmnt = parseWindMeasurements(char.value);
-                        //                temp: valueList[5] - 100);
-                        Log.d("Mainactivity", "speed: ${msmnt.WindSpeed} windDir ${msmnt.WindDirection}, boatDir ${msmnt.BoatDirection}, Battery ${msmnt.BatteryPercentage}")
-                        var value = ScreenValue(
-                            WindRelativeDirection = calculateRelativeDirection(msmnt),
-                            ///WindDirection =  msmnt.WindDirection,
-                            WindSpeed =  msmnt.WindSpeed,
-                            BoatDirection = msmnt.BoatDirection,
-                            BatteryPercentage =  msmnt.BatteryPercentage
-                        )
-                        var screenValueArray = serializeScreenValues(value)
+                    .subscribe({
                         if (screenDuinoDevice != null) {
+                            var value = ScreenValue(
+                                WindRelativeDirection = calculateRelativeDirection(it),
+                                ///WindDirection =  msmnt.WindDirection,
+                                WindSpeed =  it.WindSpeed,
+                                BoatDirection = it.BoatDirection,
+                                BatteryPercentage =  it.BatteryPercentage
+                            )
+                            var screenValueArray = serializeScreenValues(value)
                             bls.setChar(
                                 screenDuinoDevice!!,
                                 screenValueArray)
                         }
-                        localBinder.windMeasurementChannel.onNext(msmnt)
-                        ultrasonicInstanceCounter++
                     })
-            }
+
+                // storage
+                theDisposable += obs
+                    .subscribe({
+                        localBinder.windMeasurementChannel.onNext(it)
+                        ultrasonicInstanceCounter++
+                    })           }
         }
         else{
             localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Disconnected)
@@ -310,8 +314,7 @@ class ScreenDuinoService: Service() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
             var storageService = storageBinding!!.getService()
-            //TODO: wind advertisement
-//            storageService.bindMeasurementObserver( screenStatusChannel.map{ status -> windMeasurement})
+            storageService.bindMeasurementObserver(localBinder.windMeasurementChannel)
             storageIsConnected = true
         }
 
