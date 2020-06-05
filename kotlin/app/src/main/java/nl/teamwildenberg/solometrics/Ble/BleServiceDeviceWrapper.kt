@@ -8,14 +8,19 @@ import android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
 import android.content.Context
 import android.util.Log
 import io.reactivex.Observable
+import nl.teamwildenberg.solometrics.MainApplication
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
 
 
-class BleServiceDeviceWrapper (private val context: Context){
-//    val mBluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-//    private val adapter: BluetoothAdapter = mBluetoothManager.adapter
+class BleServiceDeviceWrapper (){
+    private lateinit var context: Context
+
+    init{
+        context = MainApplication.applicationContext()
+    }
+
     fun setCharValue(theBlueDevice: BlueDevice, servicesFilter: String, charToConnect: String, value:Short):Boolean {
         return setCharValue(theBlueDevice,servicesFilter,charToConnect,value.toByteArray())
     }

@@ -123,7 +123,7 @@ class DeviceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 .filter { t -> t >= 999 }
 
             launch {
-                val bls = BleService(this@DeviceListActivity)
+                val bls = BleService()
                 val obs = bls.GetDeviceList(deviceType, timerGuardObservable)
                 compositeDisposable += obs
                     //.observeOn(AndroidSchedulers.mainThread())

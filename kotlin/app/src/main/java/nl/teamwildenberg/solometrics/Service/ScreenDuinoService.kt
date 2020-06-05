@@ -131,7 +131,7 @@ class ScreenDuinoService: Service() {
             localBinder.screenStatusChannel.onNext(DeviceStatusEnum.Connecting)
             theDisposable.clear()
             GlobalScope.launch {
-                val bls = BleService(this@ScreenDuinoService)
+                val bls = BleService()
 
                 val obs = bls.Connect(theBlueDevice)
                 obs.take(1).subscribe({char ->
@@ -172,7 +172,7 @@ class ScreenDuinoService: Service() {
         if (theDisposable.size() == 0 && theBlueDevice != null) {
             localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Connecting)
             GlobalScope.launch {
-                val bls = BleService(this@ScreenDuinoService)
+                val bls = BleService()
                 val obs = bls.Connect(theBlueDevice)
 
                 // shortlived subscriber to set the user settings

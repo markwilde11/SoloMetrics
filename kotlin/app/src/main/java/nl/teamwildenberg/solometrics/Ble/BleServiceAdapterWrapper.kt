@@ -9,11 +9,19 @@ import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
 import io.reactivex.Observable
+import nl.teamwildenberg.solometrics.MainApplication
 
 
-class BleServiceAdapterWrapper (private val context: Context){
-    val mBluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    private val adapter: BluetoothAdapter = mBluetoothManager.adapter
+class BleServiceAdapterWrapper (){
+    private lateinit var context: Context
+    private lateinit var mBluetoothManager: BluetoothManager
+    private lateinit var adapter: BluetoothAdapter
+
+    init{
+        context = MainApplication.applicationContext()
+        mBluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        adapter = mBluetoothManager.adapter
+    }
 
     fun startScan(name: String, type: DeviceTypeEnum, serviceFilterString: String): Observable<BlueDevice>{
         lateinit var bleScannerCallback: ScanCallback
