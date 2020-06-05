@@ -91,7 +91,7 @@ class StorageServiceTest {
 
         // ARRANGE
         var status: StorageStatus? = null
-        service.storageStatusChannel
+        service.myBinder.storageActionChannel
             .subscribe{
                 status = it
             }
@@ -100,7 +100,7 @@ class StorageServiceTest {
         // ASSERT
         assertEquals(1, service.activeTrace?.key)
         assertEquals(service.activeTrace?.epoch, Instant.now().epochSecond)
-        assertEquals(StorageStatusEnum.StartNew, status?.state)
+        assertEquals(StorageStatusEnum.Add, status?.state)
         assertEquals(service.activeTrace, status?.trace)
     }
 
@@ -109,8 +109,8 @@ class StorageServiceTest {
         // ARRANGE
         startNewTrace()
         var trace = service.activeTrace
-        var status: StorageStatus? = null
-        service.storageStatusChannel
+        var status: DeviceStatusEnum = DeviceStatusEnum.Connected
+        service.myBinder.storageStatusChannel
             .subscribe{
                 status = it
             }
@@ -119,8 +119,7 @@ class StorageServiceTest {
             stopTrace(trace)
         }
         assertNull(service.activeTrace)
-        assertEquals(StorageStatusEnum.Stopped, status?.state)
-        assertEquals(trace, status?.trace)
+        assertEquals(DeviceStatusEnum.Disconnected, status)
 
     }
 
@@ -241,7 +240,7 @@ class StorageServiceTest {
         var traceList = service.GetTraceList()
         // ASSERT
         assertEquals(2, traceList.size)
-        assertTrue(traceList.last().epoch > (Instant.now().epochSecond -1))
+        assertTrue(traceList.last().epoch > (Instant.now().epochSecond -10))
     }
 
     @Test
@@ -289,7 +288,7 @@ class StorageServiceTest {
         var trace = service.activeTrace
         var traceKey: String? = trace?.key?.toStringKey();
         var status: StorageStatus? = null
-        service.storageStatusChannel
+        service.myBinder.storageActionChannel
             .subscribe{
                 status = it
             }

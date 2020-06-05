@@ -31,7 +31,7 @@ class DeviceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private lateinit var deviceDiscoveryAdapter: DeviceListAdapter
     private var deviceList: MutableList<BlueDevice> = mutableListOf()
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
-    private val bls: IBleService = BleServiceDummy()
+    private val bls: IBleService = BleService()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

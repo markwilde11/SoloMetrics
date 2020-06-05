@@ -28,7 +28,7 @@ import kotlin.math.roundToInt
 
 class ScreenDuinoService: Service() {
     val CHANNEL_ID: String = "ScreenDuinoServiceChannel"
-    private val bls: IBleService = BleServiceDummy()
+    private val bls: IBleService = BleService()
 
     private val screenDisposable: CompositeDisposable = CompositeDisposable()
     private val ultrasonicDisposable: CompositeDisposable = CompositeDisposable()

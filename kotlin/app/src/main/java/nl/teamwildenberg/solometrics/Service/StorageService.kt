@@ -17,7 +17,7 @@ import java.lang.Exception
 import java.time.Instant
 
 class StorageService: Service() {
-    private val myBinder = LocalBinder()
+    val myBinder = LocalBinder()
     public var activeTrace: PaperTrace? = null;
     private val measurementDisposable: CompositeDisposable = CompositeDisposable()
 
