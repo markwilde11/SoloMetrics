@@ -16,8 +16,11 @@ import android.view.MenuItem
 import android.widget.LinearLayout
 import androidx.preference.PreferenceFragmentCompat
 import com.google.gson.Gson
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.activity_main.fab
 import kotlinx.android.synthetic.main.activity_main.fabLayout1
 import kotlinx.android.synthetic.main.activity_main.fabLayout2
@@ -30,6 +33,7 @@ import nl.teamwildenberg.solometrics.Adapter.PaperTraceItem
 import nl.teamwildenberg.solometrics.Adapter.TraceListAdapter
 import nl.teamwildenberg.solometrics.Extensions.setEnabledState
 import nl.teamwildenberg.solometrics.Extensions.toDateString
+import nl.teamwildenberg.solometrics.Extensions.toStringKey
 import nl.teamwildenberg.solometrics.Service.DeviceStatusEnum
 import nl.teamwildenberg.solometrics.Service.PaperTrace
 import nl.teamwildenberg.solometrics.Service.StorageService
@@ -38,6 +42,8 @@ import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectOutputStream
+import java.time.Instant
+import java.util.concurrent.TimeUnit
 
 
 class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
@@ -230,30 +236,70 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
     }
 
     private val storageServiceConnection = object: ServiceConnection {
-        var disp: Disposable? = null
+        var disp: CompositeDisposable = CompositeDisposable()
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
-            disp = storageBinding?.storageActionChannel
-                ?.observeOn(AndroidSchedulers.mainThread())
-                ?.subscribe { theStatus ->
-                    when(theStatus.state){
+            var storageService = storageBinding!!.getService()
+
+            disp += storageBinding!!.storageActionChannel
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { theStatus ->
+                    when (theStatus.state) {
                         StorageStatusEnum.Delete -> {
-                            var item = traceList.filter { itm -> itm.Trace == theStatus.trace }.first()
-                            traceList.remove(item)
-                            traceAdapter.notifyDataSetChanged()
+                            var item =
+                                traceList.filter { itm -> itm.Trace == theStatus.trace }.firstOrNull()
+                            if (item != null) {
+                                traceList.remove(item)
+                                traceAdapter.notifyDataSetChanged()
+                            }
                         }
                         StorageStatusEnum.Add -> {
-                                traceList.add(PaperTraceItem(theStatus.trace!!, null))
-                                traceAdapter.notifyDataSetChanged()
+                            traceList.add(PaperTraceItem(theStatus.trace!!, null))
+                            traceAdapter.notifyDataSetChanged()
                         }
                     }
                 }
-                loadTraceList()
+
+            disp += storageBinding!!
+                .storageStatusChannel
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { theStatus ->
+                    setActiveTraceUI(theStatus,storageService)
+                }
+
+            setActiveTraceUI(storageBinding!!.storageStatus, storageService)
+            loadTraceList()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             storageBinding = null
-            disp?.dispose()
+            disp.dispose()
+        }
+
+        private fun setActiveTraceUI(theStatus: DeviceStatusEnum, storageService: StorageService){
+            when (theStatus) {
+                DeviceStatusEnum.Connected  -> {
+                    disp += Observable
+                        .interval(0,1, TimeUnit.SECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe{
+                            ActiveTraceCount.text = storageService.activeTrace?.count?.toString()
+                        }
+                }
+                DeviceStatusEnum.Connecting  -> {
+                    if (storageService.activeTrace != null) {
+                        ActiveTraceTitleText.text = storageService.activeTrace?.key?.toStringKey()
+                        ActiveTraceTime.text = (Instant.now().epochSecond - storageService.activeTrace!!.epoch).toString()
+                        ActiveTraceCount.text = "-"
+                    }
+                }
+                DeviceStatusEnum.Disconnected  -> {
+                    ActiveTraceTitleText.text = "-"
+                    ActiveTraceTime.text = "-"
+                    ActiveTraceCount.text = "-"
+                }
+            }
+
         }
     }
 

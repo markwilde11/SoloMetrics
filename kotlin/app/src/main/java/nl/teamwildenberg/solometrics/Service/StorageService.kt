@@ -84,9 +84,10 @@ class StorageService: Service() {
     }
 
     public fun StopTrace(){
-        if (activeTrace != null){
-            var trace = activeTrace
-            activeTrace = null
+        var trace = activeTrace
+        activeTrace = null
+        if (trace != null){
+            Paper.book().write(trace.key.toStringKey(), trace)
             myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Disconnected)
             myBinder.storageActionChannel.onNext(StorageStatus(StorageStatusEnum.Add, trace))
         }
@@ -94,17 +95,23 @@ class StorageService: Service() {
     }
 
     public fun bindMeasurementObserver(obs: Observable<WindMeasurement>){
-        var counter = 0
-
             obs
-                .filter{activeTrace != null}
-                .take(1)
+                .map{if (activeTrace == null){
+                        -1
+                    }
+                    else{
+                        activeTrace!!.key
+                    }
+                }
+                .distinct()
+                .filter{it != null}
                 .subscribe { msmntList ->
                     myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connected)
                 }
 
             measurementDisposable += obs
-                .map { msmnt: WindMeasurement -> msmnt.toPaper(++counter) }
+                .filter{activeTrace != null}
+                .map { msmnt: WindMeasurement -> msmnt.toPaper(++activeTrace!!.count) }
                 .buffer(60)
                 .subscribe { msmntList ->
                     activeTrace?.let { AddMeasurements(it, msmntList) }

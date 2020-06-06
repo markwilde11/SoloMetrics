@@ -220,7 +220,8 @@ class ScreenDuinoService: Service() {
                     .subscribe({
                         localBinder.windMeasurementChannel.onNext(it)
                         ultrasonicInstanceCounter++
-                    })           }
+                    })
+            }
         }
         else{
             localBinder.ultrasonicStatusChannel.onNext(DeviceStatusEnum.Disconnected)
