@@ -105,6 +105,10 @@ class MainActivity : ActivityBase(),CoroutineScope {
         val bindServiceIntent = Intent(this, ScreenDuinoService::class.java)
         this.bindService(bindServiceIntent, screenDuinoServiceConnection, Context.BIND_NOT_FOREGROUND)
 
+        val bindGpsServiceIntent = Intent(this, GpsService::class.java)
+        this.bindService(bindGpsServiceIntent, gpsServiceConnection, Context.BIND_NOT_FOREGROUND)
+
+
         val bindStorageServiceIntent = Intent(this, StorageService::class.java)
         this.bindService(bindStorageServiceIntent, storageServiceConnection, Context.BIND_NOT_FOREGROUND)
     }
@@ -112,6 +116,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
     override fun onPause() {
         super.onPause()
         this.unbindService(screenDuinoServiceConnection)
+        this.unbindService(gpsServiceConnection)
         this.unbindService(storageServiceConnection)
     }
 
@@ -201,13 +206,17 @@ class MainActivity : ActivityBase(),CoroutineScope {
                 observableDisposable += gpsBinding!!.gpsStatusChannel
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe{ theStatus ->
-                        status = gpsBinding!!.gpsStatus
+                        if (gpsBinding!=null){
+                            status = gpsBinding!!.gpsStatus
+                        }
                         setStatusColor(gpsStatus, R.drawable.ic_baseline_gps_fixed_24, theStatus)
                     }
             }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
+            setStatusColor(gpsStatus, R.drawable.ic_baseline_gps_fixed_24, DeviceStatusEnum.Disconnected)
+            observableDisposable.clear()
             gpsBinding = null
         }
     }

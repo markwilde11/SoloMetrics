@@ -43,6 +43,7 @@
 
         <service android:name=".Service.ScreenDuinoService" />
         <service android:name=".Service.StorageService" />
+        <service android:name=".Service.GpsService" />
     </application>
 
 </manifest>

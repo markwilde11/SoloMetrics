@@ -29,11 +29,13 @@ class GpsService: Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        myBinder.gpsStatusChannel.onNext(DeviceStatusEnum.Connected)
         return START_NOT_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        myBinder.gpsStatusChannel.onNext(DeviceStatusEnum.Disconnected)
     }
 
 
