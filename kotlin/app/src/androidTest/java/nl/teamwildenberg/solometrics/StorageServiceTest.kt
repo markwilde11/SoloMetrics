@@ -75,6 +75,7 @@ class StorageServiceTest {
     }
 
     private fun stopTrace(trace: PaperTrace){
+        // ARRANGE
         val serviceIntent = Intent(
             ApplicationProvider.getApplicationContext<Context>(),
             StorageService::class.java
@@ -82,7 +83,16 @@ class StorageServiceTest {
             // Data can be passed to the service via the Intent.
             putExtra("action", "stop")
         }
+        var status: StorageStatus? = null
+        service.myBinder.storageActionChannel
+            .subscribe{
+                status = it
+            }
+
+        // ACT
         serviceRule.startService(serviceIntent)
+        // ASSERT
+        assertEquals(StorageStatusEnum.Add, status?.state)
     }
 
     @Test
@@ -98,10 +108,9 @@ class StorageServiceTest {
         // ACT
         startNewTrace()
         // ASSERT
-        assertEquals(0, service.activeTrace?.key)
+        assertEquals(1, service.activeTrace?.key)
         assertEquals(service.activeTrace?.epoch, Instant.now().epochSecond)
-        assertEquals(StorageStatusEnum.Add, status?.state)
-        assertEquals(service.activeTrace, status?.trace)
+        //assertEquals(service.activeTrace, status?.trace)
     }
 
     @Test
