@@ -79,15 +79,16 @@ class StorageService: Service() {
             }
             activeTrace = PaperTrace(++newKey, Instant.now().epochSecond)
             Paper.book().write(newKey.toStringKey(), activeTrace)
-            myBinder.storageActionChannel.onNext(StorageStatus(StorageStatusEnum.Add, activeTrace!!))
             myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connecting)
         }
     }
 
     public fun StopTrace(){
         if (activeTrace != null){
-            myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Disconnected)
+            var trace = activeTrace
             activeTrace = null
+            myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Disconnected)
+            myBinder.storageActionChannel.onNext(StorageStatus(StorageStatusEnum.Add, trace))
         }
 
     }
@@ -136,7 +137,9 @@ class StorageService: Service() {
         traceListKeys.sortBy{it}
         traceListKeys.forEach {
             var nextTrace = Paper.book().read<PaperTrace>(it)
-            traceList.add(nextTrace)
+            if (nextTrace.key != activeTrace?.key) {
+                traceList.add(nextTrace)
+            }
         }
         return traceList
     }

@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.provider.DocumentsContract
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.MenuItem
 import android.widget.LinearLayout
 import androidx.preference.PreferenceFragmentCompat
@@ -54,11 +55,14 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
         traceAdapter = TraceListAdapter(this, traceList)
         traceListView.setAdapter(traceAdapter)
         var selectedTraceItem : PaperTraceItem? = null
-        traceListView.setOnGroupExpandListener { groupPosition: Int ->
+        traceListView.setOnGroupClickListener { expandableListView, view, i, l ->
             var service = storageBinding?.getService()
-            selectedTraceItem = traceListView.getItemAtPosition(groupPosition) as PaperTraceItem
+            Log.d("setOnGroupExpandListener", i.toString())
+            var listItem = traceListView.getItemAtPosition(i)
+            if (listItem != null){
+                selectedTraceItem = listItem as PaperTraceItem
+                Log.d("setOnGroupExpandListener", selectedTraceItem.toString())
 
-            if (selectedTraceItem != null) {
                 DeleteTraceListButton.setEnabledState(true)
                 SaveTraceListButton.setEnabledState(true)
 
@@ -70,6 +74,7 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
                     }
                 }
             }
+            return@setOnGroupClickListener false
         }
 
         DeleteTraceListButton.setEnabledState(false)
@@ -238,10 +243,8 @@ class TraceListActivity : ActivityBase(), CoroutineScope by MainScope() {
                             traceAdapter.notifyDataSetChanged()
                         }
                         StorageStatusEnum.Add -> {
-                            if (theStatus.trace != null) {
                                 traceList.add(PaperTraceItem(theStatus.trace!!, null))
                                 traceAdapter.notifyDataSetChanged()
-                            }
                         }
                     }
                 }
