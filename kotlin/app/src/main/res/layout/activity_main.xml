@@ -110,7 +110,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
             <ImageView
-                android:id="@+id/ultrasonicStatus"
+                android:id="@+id/UltrasonicStatusView"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 app:srcCompat="@drawable/ic_nature_black_24dp"
@@ -118,7 +118,15 @@
                 android:layout_marginHorizontal="10dp"
                 />
             <ImageView
-                android:id="@+id/screenStatus"
+                android:id="@+id/gpsStatus"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:srcCompat="@drawable/ic_baseline_gps_not_fixed_24"
+                android:tint="@color/statusDisconnected"
+                android:layout_marginHorizontal="10dp"
+                />
+            <ImageView
+                android:id="@+id/ScreenStatusView"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 app:srcCompat="@drawable/ic_web_black_24dp"
@@ -126,7 +134,7 @@
                 android:layout_marginHorizontal="10dp"
                 />
             <ImageView
-                android:id="@+id/storageStatus"
+                android:id="@+id/StorageStatusView"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 app:srcCompat="@drawable/ic_sd_storage_black_24dp"
@@ -225,6 +233,32 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Connect GPS" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/GpsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_baseline_gps_not_fixed_24" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/fabLayout3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginRight="@dimen/child_fab_margin"
+        android:layout_marginBottom="@dimen/standard_23"
+        android:clipToPadding="false"
+        android:gravity="center_vertical"
+        android:padding="@dimen/standard_12"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Connect Screen" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -236,7 +270,7 @@
             app:srcCompat="@drawable/ic_web_black_24dp"/>
     </LinearLayout>
     <LinearLayout
-        android:id="@+id/fabLayout3"
+        android:id="@+id/fabLayout4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"

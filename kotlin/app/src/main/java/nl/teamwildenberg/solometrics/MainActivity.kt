@@ -6,8 +6,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.graphics.Color
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
@@ -18,8 +16,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.DrawableCompat
-import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -32,10 +28,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import nl.teamwildenberg.solometrics.Ble.BlueDevice
 import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
-import nl.teamwildenberg.solometrics.Service.DeviceStatusEnum
-import nl.teamwildenberg.solometrics.Service.ScreenDuinoService
-import nl.teamwildenberg.solometrics.Service.StorageService
-import nl.teamwildenberg.solometrics.Service.WindMeasurement
+import nl.teamwildenberg.solometrics.Service.*
 import kotlin.coroutines.CoroutineContext
 
 
@@ -43,8 +36,6 @@ class MainActivity : ActivityBase(),CoroutineScope {
     private lateinit var mJob: Job
     override val coroutineContext: CoroutineContext
         get() = mJob + Dispatchers.Main
-    private var screenBinding: ScreenDuinoService.LocalBinder? = null
-    private var storageBinding: StorageService.LocalBinder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,10 +48,21 @@ class MainActivity : ActivityBase(),CoroutineScope {
         var versionName= BuildConfig.VERSION_NAME
         setTitle("SoloMetrics ( v${versionName} )")
 
+        GpsButton.setOnClickListener { view ->
+            var gpsServiceIntent = Intent(this, GpsService::class.java)
+            if (gpsServiceConnection.status == DeviceStatusEnum.Disconnected){
+                startService(gpsServiceIntent)
+            }
+            else{
+                stopService(gpsServiceIntent)
+            }
+            collapseFABMenu()
+        }
+
         UltrasonicButton.setOnClickListener { view ->
             var deviceType = DeviceTypeEnum.Ultrasonic
             launch {
-                if (screenBinding == null || screenBinding?.ultrasonicStatus == DeviceStatusEnum.Disconnected) {
+                if (screenDuinoServiceConnection == null || screenDuinoServiceConnection?.ultrasonicStatus == DeviceStatusEnum.Disconnected) {
                     discoverDevice(deviceType, thisActivity)
                 }
                 else{
@@ -72,7 +74,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
         ScreenDuinoButton.setOnClickListener { view ->
             var deviceType = DeviceTypeEnum.SoloScreenDuino
             launch {
-                if (screenBinding == null || screenBinding?.ultrasonicStatus == DeviceStatusEnum.Disconnected) {
+                if (screenDuinoServiceConnection == null || screenDuinoServiceConnection?.screenStatus == DeviceStatusEnum.Disconnected) {
                     discoverDevice(DeviceTypeEnum.SoloScreenDuino, thisActivity)
                 }
                 else{
@@ -90,6 +92,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
         }
 
         var fabList: MutableList<LinearLayout> = mutableListOf()
+        fabList.add(fabLayout4)
         fabList.add(fabLayout3)
         fabList.add(fabLayout2)
         fabList.add(fabLayout1)
@@ -185,17 +188,45 @@ class MainActivity : ActivityBase(),CoroutineScope {
         }
     }
 
-    private val storageServiceConnection = object: ServiceConnection{
+    private val gpsServiceConnection = object: ServiceConnection{
+        public var status: DeviceStatusEnum = DeviceStatusEnum.Disconnected
         private var observableDisposable: CompositeDisposable = CompositeDisposable()
+        private var gpsBinding: GpsService.LocalBinder? = null
+
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            gpsBinding = service as GpsService.LocalBinder
+            status = gpsBinding!!.gpsStatus
+            setStatusColor(gpsStatus, R.drawable.ic_baseline_gps_fixed_24, gpsBinding!!.gpsStatus)
+            if (gpsBinding !=null){
+                observableDisposable += gpsBinding!!.gpsStatusChannel
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe{ theStatus ->
+                        status = gpsBinding!!.gpsStatus
+                        setStatusColor(gpsStatus, R.drawable.ic_baseline_gps_fixed_24, theStatus)
+                    }
+            }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            gpsBinding = null
+        }
+    }
+
+    private val storageServiceConnection = object: ServiceConnection{
+        public var status: DeviceStatusEnum = DeviceStatusEnum.Disconnected
+        private var observableDisposable: CompositeDisposable = CompositeDisposable()
+        private var storageBinding: StorageService.LocalBinder? = null
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
-            setStatusColor(storageStatus, R.drawable.ic_sd_storage_black_24dp, storageBinding!!.storageStatus)
+            setStatusColor(StorageStatusView, R.drawable.ic_sd_storage_black_24dp, storageBinding!!.storageStatus)
             if (storageBinding !=null){
+                status = storageBinding!!.storageStatus
                 observableDisposable += storageBinding!!.storageStatusChannel
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe{ theStatus ->
-                        setStatusColor(storageStatus, R.drawable.ic_sd_storage_black_24dp, theStatus)
+                        status = theStatus
+                        setStatusColor(StorageStatusView, R.drawable.ic_sd_storage_black_24dp, theStatus)
                     }
             }
         }
@@ -206,25 +237,33 @@ class MainActivity : ActivityBase(),CoroutineScope {
     }
 
     private val screenDuinoServiceConnection = object : ServiceConnection {
+        public var screenStatus: DeviceStatusEnum = DeviceStatusEnum.Disconnected
+        public var ultrasonicStatus: DeviceStatusEnum = DeviceStatusEnum.Disconnected
         private var observableDisposable: CompositeDisposable = CompositeDisposable()
+        private var screenBinding: ScreenDuinoService.LocalBinder? = null
+
         var previousBoatDirection : Int = 0;
         var previousWindDirection : Int =0;
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             screenBinding = service as ScreenDuinoService.LocalBinder
             if (screenBinding != null) {
-                setStatusColor(screenStatus, R.drawable.ic_web_black_24dp, screenBinding!!.screenStatus)
+                screenStatus = screenBinding!!.screenStatus
+                setStatusColor(ScreenStatusView, R.drawable.ic_web_black_24dp, screenBinding!!.screenStatus)
                 observableDisposable += screenBinding!!.screenStatusChannel
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ theStatus ->
-                        setStatusColor(screenStatus, R.drawable.ic_web_black_24dp, theStatus)
+                        screenStatus = screenBinding!!.screenStatus
+                        setStatusColor(ScreenStatusView, R.drawable.ic_web_black_24dp, theStatus)
                     })
 
-                setStatusColor(ultrasonicStatus, R.drawable.ic_nature_black_24dp, screenBinding!!.ultrasonicStatus)
+                ultrasonicStatus = screenBinding!!.ultrasonicStatus
+                setStatusColor(UltrasonicStatusView, R.drawable.ic_nature_black_24dp, screenBinding!!.ultrasonicStatus)
                 observableDisposable += screenBinding!!.ultrasonicStatusChannel
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ theStatus ->
-                        setStatusColor(ultrasonicStatus, R.drawable.ic_nature_black_24dp, theStatus)
+                        setStatusColor(UltrasonicStatusView, R.drawable.ic_nature_black_24dp, theStatus)
+                        ultrasonicStatus = screenBinding!!.ultrasonicStatus
                         when (theStatus) {
                             DeviceStatusEnum.Disconnected -> {
                                 updateCompass(null)

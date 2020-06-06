@@ -39,17 +39,15 @@ class ScreenDuinoService: Service() {
     var screenDuinoDevice: BlueDevice? = null
     var ultraSonicDevice: BlueDevice?= null
     var windMeasurement: WindMeasurement?= null
-    var storageIsConnected: Boolean = false
     var screenText: String = ""
 
     private val localBinder = LocalBinder()
-    private var storageBinding: StorageService.LocalBinder? = null
 
     override fun onCreate() {
         super.onCreate()
 
         val bindServiceIntent = Intent(this, StorageService::class.java)
-        this.bindService(bindServiceIntent, myServiceConnection, Context.BIND_NOT_FOREGROUND)
+        this.bindService(bindServiceIntent, storageServiceConnection, Context.BIND_NOT_FOREGROUND)
 
     }
 
@@ -119,7 +117,7 @@ class ScreenDuinoService: Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        this.unbindService(myServiceConnection)
+        this.unbindService(storageServiceConnection)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -311,18 +309,18 @@ class ScreenDuinoService: Service() {
         }
     }
 
-    private val myServiceConnection = object: ServiceConnection {
+    private val storageServiceConnection = object: ServiceConnection {
+        private var storageBinding: StorageService.LocalBinder? = null
+
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
             var storageService = storageBinding!!.getService()
             storageService.bindMeasurementObserver(localBinder.windMeasurementChannel)
-            storageIsConnected = true
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             var storageService = storageBinding!!.getService()
             storageService.unbindMeasurementObserver()
-            storageIsConnected = false
             storageBinding = null;
         }
     }
