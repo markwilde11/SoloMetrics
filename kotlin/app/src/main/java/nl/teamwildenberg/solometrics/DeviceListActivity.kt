@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics
+package nl.teamwildenberg.solometrics
 
 import android.R.attr.*
 import android.app.Activity
@@ -21,10 +21,8 @@ import kotlinx.android.synthetic.main.device_list_activity.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import nl.teamwildenberg.SoloMetrics.Adapter.DeviceListAdapter
-import nl.teamwildenberg.SoloMetrics.Ble.BleService
-import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
-import nl.teamwildenberg.SoloMetrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.Adapter.DeviceListAdapter
+import nl.teamwildenberg.solometrics.Ble.*
 import java.util.concurrent.TimeUnit
 
 
@@ -33,6 +31,7 @@ class DeviceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private lateinit var deviceDiscoveryAdapter: DeviceListAdapter
     private var deviceList: MutableList<BlueDevice> = mutableListOf()
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private val bls: IBleService = BleService()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,7 +122,6 @@ class DeviceListActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 .filter { t -> t >= 999 }
 
             launch {
-                val bls = BleService(this@DeviceListActivity)
                 val obs = bls.GetDeviceList(deviceType, timerGuardObservable)
                 compositeDisposable += obs
                     //.observeOn(AndroidSchedulers.mainThread())

@@ -1,14 +1,22 @@
-package nl.teamwildenberg.SoloMetrics
+package nl.teamwildenberg.solometrics
 
+import android.R
+import android.animation.Animator
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.view.View
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
+
 
 class ActivityResult(
     val resultCode: Int,
@@ -86,5 +94,59 @@ open class ActivityBase : AppCompatActivity(){
                 continuation -> requestPermissions(*permissions, continuation = continuation, activityRequestCode = activityRequestCode)
     }
 
+    private var floatingMenuButtonList: List<LinearLayout> = listOf()
+    private lateinit var floatingMainFab: FloatingActionButton
+    private lateinit var floatingBgLayout: View
+    protected fun initFloatingMenu(bgLayout:View, mainFab: FloatingActionButton, buttonList: List<LinearLayout>){
+        floatingMenuButtonList = buttonList
+        floatingMainFab = mainFab
+        floatingBgLayout = bgLayout
+
+        mainFab.setOnClickListener {
+            if (View.GONE == bgLayout.visibility) {
+                expandFABMenu()
+            } else {
+                collapseFABMenu()
+            }
+        }
+
+        bgLayout.setOnClickListener { collapseFABMenu() }
+    }
+
+    protected fun expandFABMenu() {
+        var animationOffset: Int = 50;
+        floatingMainFab.animate().rotationBy(180f)
+        floatingBgLayout.visibility = View.VISIBLE
+        floatingMenuButtonList.forEach{ fab ->
+            animationOffset += 125
+            fab.visibility = View.VISIBLE
+            fab.animate().translationY(-animationOffset.toFloat())
+        }
+
+    }
+
+    protected  fun collapseFABMenu() {
+        lateinit var lastFab: LinearLayout
+        floatingBgLayout.visibility = View.GONE
+        floatingMainFab.animate().rotation(0F)
+        floatingMenuButtonList.forEach { fab ->
+            fab.animate().translationY(0f)
+            lastFab = fab
+        }
+        lastFab.animate().translationY(0f)
+            .setListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animator: Animator) {}
+                override fun onAnimationEnd(animator: Animator) {
+                    if (View.GONE == floatingBgLayout.visibility) {
+                        floatingMenuButtonList.forEach { fab ->
+                            fab.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onAnimationCancel(animator: Animator) {}
+                override fun onAnimationRepeat(animator: Animator) {}
+            })
+    }
 
 }

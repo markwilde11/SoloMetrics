@@ -8,16 +8,12 @@ trigger:
     include:
     - kotlin/*
 
-pool:
-  vmImage: 'macOS-latest'
-
 variables:
   System.Debug: true
   DOT_KEYSTORE_FILELOCATION: $(Agent.TempDirectory)/solometrics-keystores.jks
   DOT_KEYSTORE_PASSWORD: $(KeystorePassword)
   DOT_KEYALIAS_PASSWORD: $(KeyAliasPassword)
   DOT_BUILD_VERSIONCODE: $[counter()]
-  DOT_BUILD_VERSIONNAME: $(GitVersion.MajorMinorPatch) 
 
 
 pr: none
@@ -25,19 +21,68 @@ pr: none
 stages:
 - stage: Build
   jobs:
-  - job: Default
+  - job: Versioning
+    pool: 
+      vmImage: ubuntu-latest
     steps:
-    - task: UseDotNet@2
-      displayName: 'Install .NET Core sdk'
+    - task: UseGitVersion@5
       inputs:
-        packageType: sdk
-        version: 2.1.806
-        installationPath: $(Agent.ToolsDirectory)/dotnet
-    - task: GitVersion@5
-      inputs:
-        runtime: 'core'
-        preferBundledVersion: false
+        versionSpec: '5.x'
+        useConfigFile: true
         configFilePath: './kotlin/gitversion.yml'
+      name: GitVersion
+    - script: |
+        echo "Set replace token variables"
+        echo "##vso[task.setvariable variable=DOT_BUILD_VERSIONNAME;isOutput=true]$(GitVersion.MajorMinorPatch) " #The variable DOT_BUILD_VERSIONNAME is set to $(GitVersion.MajorMinorPatch) 
+      name: GitVersionPipeline        
+  - job: BuildAndTest
+    pool: 
+      vmImage: macOs-latest
+    variables:
+      DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
+    dependsOn: Versioning
+    steps:
+    - task: replacetokens@3
+      inputs:
+        targetFiles: 'kotlin/app/build.gradle'
+        encoding: 'auto'
+        writeBOM: true
+        actionOnMissing: 'fail'
+        keepToken: false
+        tokenPrefix: '#{'
+        tokenSuffix: '}#'
+    - bash: chmod +x kotlin/pipelines/kotlin_integration_test.sh
+    - bash: ./kotlin/pipelines/kotlin_integration_test.sh
+    # KUDOS
+    # https://medium.com/genetec-tech/android-ui-testing-in-azure-devops-81bbe7cea9fd
+    - task: Gradle@2
+      inputs:
+        workingDirectory: 'kotlin'
+        gradleWrapperFile: 'kotlin/gradlew'
+        gradleOptions: '-Xmx3072m'
+        publishJUnitResults: false
+        testResultsFiles: '**/TEST-*.xml'
+        tasks: 'assembleDebug connectedDebugAndroidTest'
+      displayName: 'Run Instrumented Tests' 
+    # - bash: | 
+    #     ./kotlin/gradlew connectedDebugAndroidTest --stacktrace -p ./kotlin
+    #     ./kotlin/gradlew --stop
+    #   displayName: 'Run Instrumented Tests' 
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFiles: '**/kotlin/app/build/**/TEST*.xml'
+        failTaskOnFailedTests: true
+        testRunTitle: 'Test results'
+      condition: always()
+  - job: PackageAndPublish
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    pool: 
+      vmImage: ubuntu-latest
+    variables:
+      DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
+    dependsOn: BuildAndTest
+    steps:
     - task: replacetokens@3
       inputs:
         targetFiles: 'kotlin/app/build.gradle'

@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Ble
+package nl.teamwildenberg.solometrics.Ble
 
 public class BlueDeviceProfile(
     var name: String,

@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Adapter
+package nl.teamwildenberg.solometrics.Adapter
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -7,9 +7,9 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
-import nl.teamwildenberg.SoloMetrics.Ble.BlueDevice
-import nl.teamwildenberg.SoloMetrics.Ble.DeviceTypeEnum
-import nl.teamwildenberg.SoloMetrics.R
+import nl.teamwildenberg.solometrics.Ble.BlueDevice
+import nl.teamwildenberg.solometrics.Ble.DeviceTypeEnum
+import nl.teamwildenberg.solometrics.R
 
 public class DeviceListAdapter(private val context: Context,
                                private val dataSource: MutableList<BlueDevice>) : BaseAdapter() {

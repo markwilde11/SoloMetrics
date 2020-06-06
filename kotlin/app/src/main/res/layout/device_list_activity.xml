@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginHorizontal="20pt"
-            android:alpha="0.1"
+            android:alpha="0.05"
             android:src="@drawable/ic_web_black_24dp"
             android:scaleType="fitCenter">
         </ImageView>

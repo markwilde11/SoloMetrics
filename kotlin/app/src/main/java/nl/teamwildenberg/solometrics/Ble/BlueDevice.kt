@@ -1,4 +1,4 @@
-package nl.teamwildenberg.SoloMetrics.Ble
+package nl.teamwildenberg.solometrics.Ble
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -13,7 +13,7 @@ public class BlueDevice  (
     var type: DeviceTypeEnum,
 //    var addressULong : Int,
     var isConnectable: Boolean,
-    var device : BluetoothDevice
+    var device : BluetoothDevice? = null
 
 ): Parcelable {
     var gatt: BluetoothGatt? = null
