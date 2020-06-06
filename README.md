@@ -6,10 +6,10 @@ To be able to judge your VMG you need to know what your performance was in previ
 
 ## Steps towards the Goal
 There is quite a few steps to take to achieve this goal. Let's try to sum-up the first steps:
-* Have a screen available to display realtime measurements and calculations
-* Have a mobile app to connect the Anemometer ([Ultrasonic](https://calypsoinstruments.com/shop/product/ultrasonic-portable-7))
-* Connect the mobile app to the Screen
-* [feature] Add storage of the measurements ([#5][i5])
+* DONE: Have a screen available to display realtime measurements and calculations
+* DONE: Have a mobile app to connect the Anemometer ([Ultrasonic](https://calypsoinstruments.com/shop/product/ultrasonic-portable-7))
+* DONE: Connect the mobile app to the Screen
+* DONE: [feature] Add storage of the measurements ([#5][i5])
 * [feature] Measure and store boat speed ([#7][i7])
 * [feature] Measure and store boat direction ([#8][i8])
 * 
@@ -34,9 +34,28 @@ Actions
 * TODO: Add links to shop
 
 ## Android
-[![Build Status](https://dev.azure.com/tw/Gps/_apis/build/status/kotlin-android-release?branchName=master)](https://dev.azure.com/tw/Gps/_build/latest?definitionId=18&branchName=master)
+[![Build Status](https://dev.azure.com/tw/Gps/_apis/build/status/GitHub%20-%20Tw%20-%20SoloMetrics%20-%20Build?branchName=master)](https://dev.azure.com/tw/Gps/_build/latest?definitionId=24&branchName=master)
+[![Release Status](https://dev.azure.com/tw/Gps/_apis/build/status/GitHub%20-%20Tw%20-%20SoloMetrics%20-%20Release?branchName=master)](https://dev.azure.com/tw/Gps/_build/latest?definitionId=25&branchName=master)
 
-Kotlin app for connecting the Ultrasonic and the Arduino Screen. 
+Kotlin app for connecting the Ultrasonic and the Arduino Screen. The App is the center piece in your measurements. You can connect the App to the Ultrasonice winddevice and output all your measurements to the external arduino screen. You can use the app only to use the sensors of the Device, but my aim is to use it primarily with the Ultrasonic Measurement device. 
+
+### Play Store:
+The app is in a [close Alpha channel release](https://play.google.com/store/apps/details?id=nl.teamwildenberg.solometrics). If you are intersted, please contact me.
+
+### Measurements:
+The following sensors / measurements are calculated and stored:
+
+Current:
+- Ultrasonic Windspeed (knots)
+- Ultrasonic Relative Wind Angle (degrees)
+- Ultrasonic Boat Heading (degrees)
+
+TODO:
+- Android GPS Boat Direction (Degrees)
+- Android GPS Lat / Lon / accurary
+- Android GPS Boat Speed (knots)
+
+
 
 
 
