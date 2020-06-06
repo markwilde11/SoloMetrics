@@ -98,7 +98,7 @@ class StorageServiceTest {
         // ACT
         startNewTrace()
         // ASSERT
-        assertEquals(1, service.activeTrace?.key)
+        assertEquals(0, service.activeTrace?.key)
         assertEquals(service.activeTrace?.epoch, Instant.now().epochSecond)
         assertEquals(StorageStatusEnum.Add, status?.state)
         assertEquals(service.activeTrace, status?.trace)
@@ -239,7 +239,7 @@ class StorageServiceTest {
         // ACT
         var traceList = service.GetTraceList()
         // ASSERT
-        assertEquals(2, traceList.size)
+        assertEquals(1, traceList.size)
         assertTrue(traceList.last().epoch > (Instant.now().epochSecond -10))
     }
 
