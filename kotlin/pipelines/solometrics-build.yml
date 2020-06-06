@@ -81,7 +81,9 @@ stages:
       vmImage: ubuntu-latest
     variables:
       DOT_BUILD_VERSIONNAME: $[ dependencies.Versioning.outputs['GitVersionPipeline.DOT_BUILD_VERSIONNAME'] ]
-    dependsOn: BuildAndTest
+    dependsOn: 
+    - Versioning
+    - BuildAndTest
     steps:
     - task: replacetokens@3
       inputs:
