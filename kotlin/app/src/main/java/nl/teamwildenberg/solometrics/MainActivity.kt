@@ -53,8 +53,10 @@ class MainActivity : ActivityBase(),CoroutineScope {
             var gpsServiceIntent = Intent(this, GpsService::class.java)
             launch {
                 if (gpsServiceConnection.status == DeviceStatusEnum.Disconnected) {
+                    gpsServiceIntent.putExtra("action", "start")
                     startGpsService(thisActivity, gpsServiceIntent)
                 } else {
+                    gpsServiceIntent.putExtra("action", "stop")
                     stopService(gpsServiceIntent)
                 }
             }

@@ -2,24 +2,29 @@ package nl.teamwildenberg.solometrics.Service
 
 import android.app.Service
 import android.content.Intent
+import android.icu.util.Measure
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import io.paperdb.Paper
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import nl.teamwildenberg.solometrics.Extensions.toStringKey
-import nl.teamwildenberg.solometrics.Extensions.toPaper
 import java.lang.Exception
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
 class StorageService: Service() {
     val myBinder = LocalBinder()
     public var activeTrace: PaperTrace? = null;
     private val measurementDisposable: CompositeDisposable = CompositeDisposable()
+    private var gpsMeasurementObservable: Observable<GpsMeasurement>? = null;
+    private var windMeasurementObservable: Observable<WindMeasurement>? = null;
+
 
     override fun onCreate() {
         super.onCreate()
@@ -94,33 +99,80 @@ class StorageService: Service() {
 
     }
 
-    public fun bindMeasurementObserver(obs: Observable<WindMeasurement>){
-            obs
-                .map{if (activeTrace == null){
-                        -1
-                    }
-                    else{
-                        activeTrace!!.key
-                    }
-                }
-                .distinct()
-                .filter{it != null}
-                .subscribe { msmntList ->
-                    myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connected)
-                }
+    private fun bindObservers(){
+        myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connecting)
+        if (measurementDisposable.size() > 0){
+            measurementDisposable.clear()
+        }
 
-            measurementDisposable += obs
-                .filter{activeTrace != null}
-                .map { msmnt: WindMeasurement -> msmnt.toPaper(++activeTrace!!.count) }
-                .buffer(60)
-                .subscribe { msmntList ->
-                    activeTrace?.let { AddMeasurements(it, msmntList) }
+        var obs: Observable<PaperMeasurement>? = null
+        if (gpsMeasurementObservable != null && windMeasurementObservable != null){
+           obs = Observables
+               .combineLatest(gpsMeasurementObservable!!, windMeasurementObservable!!)
+               .map{thePair ->
+                   var gps = thePair.first
+                   var wind = thePair.second
+                   PaperMeasurement(0, Instant.now().epochSecond, wind.WindDirection, wind.WindSpeed, wind.BoatDirection, wind.BatteryPercentage, gps.Lat, gps.Lon, gps.Epoch)
+               }
+        }else if (gpsMeasurementObservable != null){
+            obs = gpsMeasurementObservable!!.map{ gps->
+                PaperMeasurement(0, Instant.now().epochSecond, 0,0,0, 0, gps.Lat, gps.Lon, gps.Epoch)
+            }
+        }else if (windMeasurementObservable != null){
+            obs = windMeasurementObservable!!.map{wind ->
+            PaperMeasurement(0, Instant.now().epochSecond, wind.WindDirection, wind.WindSpeed, wind.BoatDirection, wind.BatteryPercentage, 0.0, 0.0,0)
+            }
+        }else{
+            myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Disconnected)
+            return
+        }
+
+        obs
+            .map{if (activeTrace == null){
+                    -1
                 }
+                else{
+                    activeTrace!!.key
+                }
+            }
+            .distinct()
+            .filter{it != null}
+            .subscribe { msmntList ->
+                myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connected)
+            }
+
+        measurementDisposable += obs
+            .filter{activeTrace != null}
+            .throttleLast(250, TimeUnit.MILLISECONDS)
+            .map { msmnt: PaperMeasurement ->
+                msmnt.counter = ++activeTrace!!.count
+                msmnt
+            }
+            .buffer(60)
+            .subscribe { msmntList ->
+                activeTrace?.let { AddMeasurements(it, msmntList) }
+            }
     }
 
-    public fun unbindMeasurementObserver(){
-        measurementDisposable.clear()
+    public fun bindWindMeasurementObserver(obs: Observable<WindMeasurement>){
+        windMeasurementObservable = obs
+        bindObservers()
     }
+    public fun unbindWindMeasurementObserver(){
+        windMeasurementObservable = null
+        bindObservers()
+    }
+
+    public fun bindGpsMeasurementObserver(obs: Observable<GpsMeasurement>){
+        gpsMeasurementObservable = obs
+        bindObservers()
+    }
+
+    public fun unbindGpsMeasurementObserver(){
+        gpsMeasurementObservable = null
+        bindObservers()
+    }
+
 
     public fun AddMeasurements(targetTrace:PaperTrace, measurementPartition: MutableList<PaperMeasurement>): String{
         var partitionKey: Int = 1
@@ -141,6 +193,8 @@ class StorageService: Service() {
         Paper.book(targetTrace.key.toStringKey()).write(partitionKey.toStringKey(), measurementPartition)
         return partitionKey.toStringKey()
     }
+
+
 
     public fun GetTraceList() : List<PaperTrace>{
         var traceList: MutableList<PaperTrace> = mutableListOf()

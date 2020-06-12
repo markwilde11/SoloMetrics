@@ -199,7 +199,7 @@ class StorageServiceTest {
                 }
             }
         // ACT
-        service.bindMeasurementObserver( measurementObservable)
+        service.bindWindMeasurementObserver( measurementObservable)
 
         // ASSERT
         assertEquals(2, partitionKeyList.size)
@@ -222,7 +222,7 @@ class StorageServiceTest {
                 }
             }
         // ACT
-        service.bindMeasurementObserver( measurementObservable)
+        service.bindWindMeasurementObserver( measurementObservable)
         startNewTrace()
 
         // ASSERT
@@ -281,7 +281,7 @@ class StorageServiceTest {
                     partitionKeyList = Paper.book(trace.key.toStringKey()).allKeys
                 }
             }
-        service.bindMeasurementObserver( measurementObservable)
+        service.bindWindMeasurementObserver( measurementObservable)
         var trace = service.activeTrace
 
         // ACT

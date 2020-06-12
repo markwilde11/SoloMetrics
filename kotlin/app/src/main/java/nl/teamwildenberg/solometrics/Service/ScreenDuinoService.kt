@@ -315,12 +315,12 @@ class ScreenDuinoService: Service() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder
             var storageService = storageBinding!!.getService()
-            storageService.bindMeasurementObserver(localBinder.windMeasurementChannel)
+            storageService.bindWindMeasurementObserver(localBinder.windMeasurementChannel)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             var storageService = storageBinding!!.getService()
-            storageService.unbindMeasurementObserver()
+            storageService.unbindWindMeasurementObserver()
             storageBinding = null;
         }
     }
