@@ -125,15 +125,19 @@ class StorageService: Service() {
     public fun AddMeasurements(targetTrace:PaperTrace, measurementPartition: MutableList<PaperMeasurement>): String{
         var partitionKey: Int = 1
 
-        checkTrace(targetTrace)
-        val traceKey = targetTrace.key.toStringKey()
-        var partitionKeyList = Paper.book(traceKey).allKeys
-        if (partitionKeyList.size > 0) {
-            partitionKeyList.sortBy{it}
-            var lastPartitionKey = partitionKeyList.last()
-            partitionKey = lastPartitionKey.toInt() + 1
+        if (checkTrace(targetTrace)) {
+            val traceKey = targetTrace.key.toStringKey()
+            var partitionKeyList = Paper.book(traceKey).allKeys
+            if (partitionKeyList.size > 0) {
+                partitionKeyList.sortBy { it }
+                var lastPartitionKey = partitionKeyList.last()
+                partitionKey = lastPartitionKey.toInt() + 1
+            }
         }
-
+        else
+        {
+            throw Exception("Trace does not exist ${targetTrace.key}")
+        }
         Paper.book(targetTrace.key.toStringKey()).write(partitionKey.toStringKey(), measurementPartition)
         return partitionKey.toStringKey()
     }
@@ -153,12 +157,14 @@ class StorageService: Service() {
 
     public fun GetPartionList(trace: PaperTrace): List<List<WindMeasurement>>{
         var partitionList: MutableList<List<WindMeasurement>> = mutableListOf()
-        checkTrace(trace)
-        var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
-        partitionKeys.sort()
-        partitionKeys.forEach {
-            var partition = Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
-            partitionList.add(partition)
+        if (checkTrace(trace)) {
+            var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
+            partitionKeys.sort()
+            partitionKeys.forEach {
+                var partition =
+                    Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
+                partitionList.add(partition)
+            }
         }
 
         return partitionList
@@ -166,20 +172,22 @@ class StorageService: Service() {
 
     public fun GetWindMeasurementList(trace: PaperTrace) : List<WindMeasurement>{
         var windMeasurementList: MutableList<WindMeasurement> = mutableListOf()
-        checkTrace(trace)
-        var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
-        partitionKeys.sort()
-        partitionKeys.forEach {
-            var partition = Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
-            windMeasurementList.addAll(partition)
+        if (checkTrace(trace)) {
+            var partitionKeys = Paper.book(trace.key.toStringKey()).allKeys
+            partitionKeys.sort()
+            partitionKeys.forEach {
+                var partition =
+                    Paper.book(trace.key.toStringKey()).read<MutableList<WindMeasurement>>(it)
+                windMeasurementList.addAll(partition)
+            }
         }
-
         return windMeasurementList
     }
 
     public fun DeleteTrace(trace: PaperTrace): DeleteTraceResult{
         var stringKey =trace.key.toStringKey()
         if ( !Paper.book().contains(stringKey)){
+            Paper.book().delete(stringKey)
             return DeleteTraceResult.NotFound
         }
         else {
@@ -190,11 +198,9 @@ class StorageService: Service() {
         }
     }
 
-    private fun checkTrace(traceToVerify: PaperTrace){
+    private fun checkTrace(traceToVerify: PaperTrace): Boolean{
         var trace = Paper.book().read<PaperTrace>(traceToVerify.key.toStringKey())
-        if (trace == null){
-            throw Exception("Trace '${traceToVerify.key}' does not exist")
-        }
+        return trace != null
     }
 
     public enum class DeleteTraceResult {
