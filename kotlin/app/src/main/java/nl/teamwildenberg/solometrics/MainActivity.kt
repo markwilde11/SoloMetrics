@@ -72,8 +72,8 @@ class MainActivity : ActivityBase(),CoroutineScope {
         ScreenDuinoButton.setOnClickListener { view ->
             var deviceType = DeviceTypeEnum.SoloScreenDuino
             launch {
-                if (screenBinding == null || screenBinding?.ultrasonicStatus == DeviceStatusEnum.Disconnected) {
-                    discoverDevice(DeviceTypeEnum.SoloScreenDuino, thisActivity)
+                if (screenBinding == null || screenBinding?.screenStatus == DeviceStatusEnum.Disconnected) {
+                    discoverDevice(deviceType, thisActivity)
                 }
                 else{
                     callScreenDuinoService(deviceType, null, thisActivity)
