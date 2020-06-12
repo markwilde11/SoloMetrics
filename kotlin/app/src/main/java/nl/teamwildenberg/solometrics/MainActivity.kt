@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.location.LocationManager
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
@@ -50,11 +51,12 @@ class MainActivity : ActivityBase(),CoroutineScope {
 
         GpsButton.setOnClickListener { view ->
             var gpsServiceIntent = Intent(this, GpsService::class.java)
-            if (gpsServiceConnection.status == DeviceStatusEnum.Disconnected){
-                startService(gpsServiceIntent)
-            }
-            else{
-                stopService(gpsServiceIntent)
+            launch {
+                if (gpsServiceConnection.status == DeviceStatusEnum.Disconnected) {
+                    startGpsService(thisActivity, gpsServiceIntent)
+                } else {
+                    stopService(gpsServiceIntent)
+                }
             }
             collapseFABMenu()
         }
@@ -133,9 +135,37 @@ class MainActivity : ActivityBase(),CoroutineScope {
         }
     }
 
+    private suspend fun startGpsService(thisActivity: Activity, gpsIntent: Intent){
+        var permissionResult = this.requestPermissionss(Manifest.permission.ACCESS_FINE_LOCATION, activityRequestCode =  3)
+        if (permissionResult) {
+            val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            // locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 1.0f, this)
+            val isGPS = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            if (!isGPS){
+                launch {
+                    val enableGpsIntent = Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    val activityResult = launchIntent(enableGpsIntent).await()
+                    if (activityResult?.resultCode != RESULT_OK) {
+                        var fab = thisActivity.findViewById<FloatingActionButton>(R.id.UltrasonicButton)
+                        Snackbar.make(fab, "Please enable GPS on the Device", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show()
+                        return@launch
+                    }
+                }
+            }
+            // start service
+            startService(gpsIntent)
+
+        }
+        else{
+            var fab = thisActivity.findViewById<FloatingActionButton>(R.id.UltrasonicButton)
+            Snackbar.make(fab, "Please allow the app to use the GPS location", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show()
+        }
+    }
+
     private suspend fun discoverDevice(deviceType: DeviceTypeEnum, thisActivity: Activity) {
         var permissionResult = this.requestPermissionss(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, activityRequestCode =  1)
-
         if (permissionResult) {
             val changePageIntent = Intent(thisActivity, DeviceListActivity::class.java)
             changePageIntent.putExtra("deviceType", deviceType)
@@ -160,7 +190,7 @@ class MainActivity : ActivityBase(),CoroutineScope {
     }
 
     private suspend fun callScreenDuinoService(deviceType: DeviceTypeEnum, theDevice: BlueDevice?, thisActivity: Activity){
-        var permissionResult = this.requestPermissionss(Manifest.permission.FOREGROUND_SERVICE, activityRequestCode =  1)
+        var permissionResult = this.requestPermissionss(Manifest.permission.FOREGROUND_SERVICE, activityRequestCode =  2)
 
         if (permissionResult) {
             val startServiceIntent = Intent(thisActivity, ScreenDuinoService::class.java)
