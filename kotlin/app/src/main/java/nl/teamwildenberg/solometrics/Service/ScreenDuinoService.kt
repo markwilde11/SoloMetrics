@@ -38,9 +38,8 @@ class ScreenDuinoService: Service() {
 
     var screenDuinoDevice: BlueDevice? = null
     var ultraSonicDevice: BlueDevice?= null
-    var windMeasurement: WindMeasurement?= null
     var storageIsConnected: Boolean = false
-    var screenText: String = ""
+
 
     private val localBinder = LocalBinder()
     private var storageBinding: StorageService.LocalBinder? = null
@@ -87,7 +86,6 @@ class ScreenDuinoService: Service() {
             val blueDevice = intent.getParcelableExtra("blueDevice") as BlueDevice?
 
             // hydrate ScreenDuino bluetooth device
-
             when (deviceType) {
                 DeviceTypeEnum.Ultrasonic ->{
                     Log.d("ScreenDuinoService", "starting command - Connect to ultrasonic")
