@@ -47,8 +47,8 @@ class StorageServiceTest {
         service = (binder as StorageService.LocalBinder).getService()
 
         Paper.book().destroy()
-        Paper.book("0001").destroy()
-        Paper.book("0002").destroy()
+        Paper.book(1.toStringKey()).destroy()
+        Paper.book(2.toStringKey()).destroy()
     }
 
     @After
@@ -60,7 +60,8 @@ class StorageServiceTest {
             putExtra("action", "stop")
         }
         serviceRule.startService(serviceIntent)
-
+        service.unbindGpsMeasurementObserver()
+        service.unbindWindMeasurementObserver()
     }
 
     private fun startNewTrace(){
@@ -370,7 +371,7 @@ class StorageServiceTest {
 
         var msmnList : MutableList<PaperMeasurement> = mutableListOf()
         for(i in 0..arraySize-1 ){
-            val msmnt = PaperMeasurement(counter, Instant.now().epochSecond,100 * partitionKey, 100+partitionKey, -partitionKey, 0 )
+            val msmnt = PaperMeasurement(counter, Instant.now().epochSecond,100 * partitionKey, 100+partitionKey, -partitionKey, 0 ,0.0,0.0,0)
             msmnList.add(msmnt)
             counter ++;
         }

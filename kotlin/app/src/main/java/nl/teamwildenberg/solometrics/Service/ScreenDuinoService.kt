@@ -110,6 +110,10 @@ class ScreenDuinoService: Service() {
             &&  (ultraSonicDevice == null)
             ){
             this.stopSelf()
+            if (storageServiceConnection != null && storageServiceConnection.storageBinding != null) {
+                var storageService = storageServiceConnection.storageBinding!!.getService()
+                storageService.unbindWindMeasurementObserver()
+            }
         }
 
         return START_NOT_STICKY
@@ -310,7 +314,7 @@ class ScreenDuinoService: Service() {
     }
 
     private val storageServiceConnection = object: ServiceConnection {
-        private var storageBinding: StorageService.LocalBinder? = null
+        var storageBinding: StorageService.LocalBinder? = null
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             storageBinding = service as StorageService.LocalBinder

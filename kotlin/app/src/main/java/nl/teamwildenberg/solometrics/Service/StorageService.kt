@@ -84,12 +84,13 @@ class StorageService: Service() {
             }
             activeTrace = PaperTrace(++newKey, Instant.now().epochSecond)
             Paper.book().write(newKey.toStringKey(), activeTrace)
-            myBinder.storageStatusChannel.onNext(DeviceStatusEnum.Connecting)
+            bindObservers()
         }
     }
 
     public fun StopTrace(){
         var trace = activeTrace
+        measurementDisposable.clear()
         activeTrace = null
         if (trace != null){
             Paper.book().write(trace.key.toStringKey(), trace)
@@ -143,7 +144,7 @@ class StorageService: Service() {
 
         measurementDisposable += obs
             .filter{activeTrace != null}
-            .throttleLast(250, TimeUnit.MILLISECONDS)
+//            .throttleLast(250, TimeUnit.MILLISECONDS)
             .map { msmnt: PaperMeasurement ->
                 msmnt.counter = ++activeTrace!!.count
                 msmnt
